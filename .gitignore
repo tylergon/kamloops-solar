@@ -1,0 +1,6 @@
+# Automated config files to ignore
+uv.lock
+
+# Folders to ignore
+data/
+
