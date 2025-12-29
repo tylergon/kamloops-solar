@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 
 # Get the tile codes
-df = pd.read_csv('output/kamloops_grid.csv')
+df = pd.read_csv('scripts/output/kamloops_grid.csv')
 values = [code for code in df.values.flatten() if str(code) != 'nan']
 
 # Loop through tile codes. Save each zip.
