@@ -6,6 +6,11 @@ library("terra")
 library("RCSF")
 library("dbscan")
 
+# TODO:
+#   Take only the top layer of LiDAR points
+#   Filtering noise out
+#   Identify vegetation
+
 
 # Setup -------------------------------------------------------------------
 
@@ -66,17 +71,27 @@ bldg_hulls <- st_sfc(crs = 6653)
 for (id in unique(las_clusters$ClusterID)) {
   building <- filter_poi(nlas_filter, ClusterID == id)
   bldg_hull <- st_convex_hull(building)
-  bldg_hulls <- c(bldg_hullsl, bldg_hull)
+  bldg_hulls <- c(bldg_hulls, bldg_hull)
 }
 
 # Filter out polygons w/ less than 20m of area
-building_poly[(st_area(building_poly) >= units::set_units(20, m^2))]
+res_a <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(20, m^2))]
 
 # Remove thin channels with a series of buffers
-plot(st_buffer(good, -5))
-plot(st_buffer(st_buffer(good, -.5), .5))
+res_b <- st_buffer(st_buffer(res_a, -.5), .5)
+
+# Write to file
+st_write(res_b, 'output/footprint/5255C/5255C.shp')
+
+plot(las)
 
 
+# Export Topological Datasets ---------------------------------------------
+
+
+dem <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
+writeRaster(dem, 'output/DEM/5255C.tif', overwrite=TRUE)
+plot(dem)
 
 
 

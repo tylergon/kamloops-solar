@@ -4,8 +4,10 @@ uv.lock
 
 # Folders to ignore
 data/
+output/
 
+# R
 .Rproj.user
 .Rhistory
-.RDataTmp
-.RDataTmp1
+.RDataTmp*
+/temp
