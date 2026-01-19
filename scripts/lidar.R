@@ -16,36 +16,65 @@ library("dbscan")
 
 
 # Basic LAS setup
-las_og <- readLAS("data/LiDAR/5255C/5255C.las", select = "xyzrnc")
-st_crs(las_og) <- 6653
+las_init <- readLAS("data/LiDAR/5255C/5255C.las", select = "xyzrnc")
+st_crs(las_init) <- 6653
 
 # Load Kamloops footprints
-fp_og <- st_read("data/building-footprints.gpkg")
-fp_og <- st_transform(fp_og, crs = 6653)
-fp_geom <- st_geometry(fp_og)
+fp_init <- st_read("data/building-footprints.gpkg") %>% 
+  st_transform(crs = 6653) %>% 
+  st_geometry()
 
-# Cut down the extent to save processing time
-extent <- st_bbox(las_og)
+# Load the tile's orthophoto
+rgb <- rast('data/Orthophoto/5255C.tif')
+crs(rgb) <- "epsg:6653"
+
+# Create smaller extent to cut down on processing during development phase
+extent <- st_bbox(las_init)
 bbox_poly <- st_as_sfc(extent)
 grid <- st_make_grid(bbox_poly, n = c(2, 2))
 
 # Clip down images
-las <- clip_roi(las_og, grid[1])
-fp <- st_crop(fp_geom, st_bbox(las))
+las <- clip_roi(las_init, grid[1])
+fp <- st_crop(fp_init, st_bbox(las))
+rgb <- terra::crop(rgb, st_bbox(las))
+
+# Plot to validate results
+#plot(las)
+#plot(fp)
+plotRGB(rgb)
+
+
+
+# Filtering & Cleaning ----------------------------------------------------
+
+
+# TODO: Try to remove the powerlines
 
 
 # Topographic Models ------------------------------------------------------
 
 
-# Identify & filter out the ground points
-las_gnd <- classify_ground(las, algorithm = csf())
-gnd <- filter_poi(las_gnd, Classification == 2L)
+# Classify ground & compare to vendor classification
+# TODO: Return and attempt to tune CSF (or other classifiers) to match vendor
+# TODO: Use ONLY last return for ground classification
+
+#las_gnd <- classify_ground(las, algorithm = csf())
+#csf_gnd <- filter_poi(las_gnd, Classification == 2L)
+#vnd_gnd <- filter_poi(las, Classification == 2L)
+#plot(csf_gnd)
+#plot(vnd_gnd)
+
+# Filter to only ground points
+gnd <- filter_poi(las, Classification == 2L)
 
 # Generate the DTM
-dtm <- rasterize_terrain(gnd, res = 1, algorithm = tin())
-nlas <- las - dtm
+dem <- rasterize_terrain(gnd, res = 0.5, algorithm = tin())
+nlas <- las - dem
 
-# plot_dtm3d(dtm_tin, bg = "white") 
+# TODO: Compare the DEM to an aerial photo
+
+plot(dem)
+plot_dtm3d(dem, bg = "white") 
 plot(nlas)
 plot(las)
 
@@ -53,11 +82,22 @@ plot(las)
 # Building Footprint Identification ---------------------------------------
 
 
-# Filter out points (over 2m and classified as "Building")
+# 1) Filter down our point cloud
+# We **don't** use ReturnNumber == 1 as we might filter out occluded buildings
+
 nlas_filter <- filter_poi(nlas, Z >= 2, Classification == 6)
 
-# Cluster point cloud based on proximity
-df <- data.frame(nlas_filter$X, nlas_filter$Y, nlas_filter$Z)
+# TODO: Figure out how we can use NumberOfReturns & ReturnNumber for:
+#         a) DEM creation
+#         b) Building identification (clean up the point cloud (?))
+#         c) Powerline filtering
+#nlas_test <- filter_poi(nlas, ReturnNumber != NumberOfReturns)
+
+
+# 2) Cluster point cloud based on proximity
+# TODO: Optimize dbscan parameters
+
+df <- data.frame(nlas_filter$X, nlas_filter$Y)
 dbscan_res <- dbscan(df, eps=1, minPts = 20)
 
 nlas_filter@data$ClusterID <- dbscan_res$cluster
@@ -65,7 +105,10 @@ las_clusters <- filter_poi(nlas_filter, ClusterID > 0)
 
 plot(las_clusters, color = "ClusterID")
 
-# Wrap each cluster with a concave hull
+
+# 3) Wrap each cluster with a concave hull
+# TODO: Bump up tightness to get better wrapped angles
+#       AKA solve hull for minimum area full encasement
 
 bldg_hulls <- st_sfc(crs = 6653)
 for (id in unique(las_clusters$ClusterID)) {
@@ -74,20 +117,23 @@ for (id in unique(las_clusters$ClusterID)) {
   bldg_hulls <- c(bldg_hulls, bldg_hull)
 }
 
+plot(bldg_hulls)
+
 # Filter out polygons w/ less than 20m of area
-res_a <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(20, m^2))]
+buff_size <- 0.5
+fp_filtered <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(20, m^2))] %>% # Require >= 20m^2 of area
+  st_buffer(-1 * buff_size) %>% # Reduce area by 0.5m
+  st_buffer(buff_size) # Increase area by 0.5m
 
-# Remove thin channels with a series of buffers
-res_b <- st_buffer(st_buffer(res_a, -.5), .5)
 
-# Write to file
-st_write(res_b, 'output/footprint/5255C/5255C.shp')
 
-plot(las)
-
+# TODO: Can we use coplanarity to identify each roof panel?
+# TODO: Implement Toula's least squares operations
 
 # Export Topological Datasets ---------------------------------------------
 
+# Write to file
+st_write(res_b, 'output/footprint/5255C/5255C.shp')
 
 dem <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
 writeRaster(dem, 'output/DEM/5255C.tif', overwrite=TRUE)
