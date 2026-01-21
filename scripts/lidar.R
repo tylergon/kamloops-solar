@@ -6,10 +6,38 @@ library("terra")
 library("RCSF")
 library("dbscan")
 
-# TODO:
-#   Take only the top layer of LiDAR points
-#   Filtering noise out
-#   Identify vegetation
+
+# TODO & stuff
+
+# - New script: slope, azimuth, & > 800 kwh/m^2
+#   ***
+
+# - Statistical analysis
+
+# - Implement Toula's least squares algorithm for wrapping
+#   **
+# - Fiddle with DB scan optimization
+#   **
+# - Fiddle with building wrapping parameters (more square)
+#   **
+
+# - Filter out powerlines (& other noise filtering)
+#   ***
+
+# POST INITIAL RESULTS
+
+# - Add in a vegetation layer
+# - Explore further UMEP parameters
+
+
+# IF THERE IS A CHANCE
+
+# - Explore coplanarity and its usefulness (otherwise QGIS)
+#   *
+
+# - Classify the ground data myself
+#   *
+
 
 
 # Setup -------------------------------------------------------------------
