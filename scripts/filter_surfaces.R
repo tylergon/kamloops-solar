@@ -1,17 +1,11 @@
 library("sf")
 library("terra")
-
-# 2. Cut out rooftops
-#    -> Export total rooftop insolation
-# 3. Calculate aspect & pitch raster
-# 4. Filter non-suitable surfaces
-#    -> Aspect
-#    -> Slope
-#    -> Insolation
-
+ 
 
 # TODO: Extract [Aspects, Slopes, Full Buildings, and combinations] as features
 #       to enable analysis of each of the traits statistics
+
+# TODO: Polygonize faces w/ matching slope & aspect. Filter out if < 10m^2
 
 
 # Load data ---------------------------------------------------------------
@@ -22,6 +16,7 @@ library("terra")
 
 # Digital surface model of the area
 dsm <- rast('output/DSM/POC.tif')
+dem <- rast('output/DEM/5255C.tif')
 
 # Annual insolation estimates for the area
 insolation <- rast('output/insolation/POC.tif')
@@ -30,10 +25,11 @@ insolation <- rast('output/insolation/POC.tif')
 footprints <- st_read('output/footprint/5255C/5255C.shp')
 
 # Load in the orthophoto
-rgb_photo <- rast("data/Orthophoto/5255C.tif")
+rgb_photo <- rast("data/Orthophoto/5255C.tif") %>% 
+  crop(dsm)
 
-#plotRGB(rgb_photo)
-#plot(st_geometry(footprints), border = 'red', add = TRUE)
+plotRGB(rgb_photo)
+plot(st_geometry(footprints), border = 'red', add = TRUE)
 
 
 # Extract roof level insolation -------------------------------------------
@@ -105,15 +101,17 @@ names(ret) <- c("Insolation", "Slope", "Slope Class",
 
 # Locate the best locations! ----------------------------------------------
 
-
-aspect_mask <- bldg_aspect >= 45 | bldg_aspect <= 316
+# Surfaces must not be facing north
+aspect_mask <- bldg_aspect >= 45 & bldg_aspect <= 315
+# Surfaces must not have a slope over 60 degrees
 slope_mask <- bldg_slope <= 60
+# Surfaces must receive a minimum of 800 kWh/m^2
 insolation_mask <- bldg_insolation >= 800
 
+# Filter out points NOT matching our predefined filteres
 mask <- aspect_mask & slope_mask & insolation_mask
-
-# TODO: Fix this
-accepted <- mask(bldg_insolation, mask, maskvalues = TRUE)
+accepted <- mask(bldg_insolation, mask, maskvalues = FALSE)
 plot(accepted)
 
-# TODO: Probably filter out bad roofs LAST
+
+

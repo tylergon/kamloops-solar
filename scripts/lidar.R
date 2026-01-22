@@ -99,6 +99,8 @@ gnd <- filter_poi(las, Classification == 2L)
 dem <- rasterize_terrain(gnd, res = 0.5, algorithm = tin())
 nlas <- las - dem
 
+writeRaster(dem, 'data/DEM/5255C.tif', overwrite=TRUE)
+
 # TODO: Compare the DEM to an aerial photo
 
 plot(dem)
