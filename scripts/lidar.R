@@ -154,18 +154,18 @@ fp_filtered <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(20, m^2))] %>
   st_buffer(buff_size) # Increase area by 0.5m
 
 
-
 # TODO: Can we use coplanarity to identify each roof panel?
 # TODO: Implement Toula's least squares operations
+
 
 # Export Topological Datasets ---------------------------------------------
 
 # Write to file
 st_write(res_b, 'output/footprint/5255C/5255C.shp')
 
-dem <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
-writeRaster(dem, 'output/DEM/5255C.tif', overwrite=TRUE)
-plot(dem)
+dsm <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
+writeRaster(dsm, 'output/DSM/POC.tif', overwrite=TRUE)
+plot(dsm)
 
 
 
