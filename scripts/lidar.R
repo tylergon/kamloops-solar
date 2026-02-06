@@ -6,11 +6,10 @@ library("terra")
 library("RCSF")
 library("dbscan")
 
+trg_crs <- 6653
+
 
 # TODO & stuff
-
-# - New script: slope, azimuth, & > 800 kwh/m^2
-#   ***
 
 # - Statistical analysis
 
@@ -45,11 +44,11 @@ library("dbscan")
 
 # Basic LAS setup
 las_init <- readLAS("data/LiDAR/5255C/5255C.las", select = "xyzrnc")
-st_crs(las_init) <- 6653
+st_crs(las_init) <- trg_crs
 
 # Load Kamloops footprints
 fp_init <- st_read("data/building-footprints.gpkg") %>% 
-  st_transform(crs = 6653) %>% 
+  st_transform(crs = trg_crs) %>% 
   st_geometry()
 
 # Load the tile's orthophoto
@@ -69,8 +68,11 @@ rgb <- terra::crop(rgb, st_bbox(las))
 # Plot to validate results
 #plot(las)
 #plot(fp)
-plotRGB(rgb)
+#plotRGB(rgb)
+#rgb
 
+#writeRaster(rgb, 'output/POC/ortho.tif', overwrite=TRUE)
+#st_write(fp, 'output/POC/footprint-gt.gpkg', overwrite=TRUE)
 
 
 # Filtering & Cleaning ----------------------------------------------------
@@ -99,7 +101,7 @@ gnd <- filter_poi(las, Classification == 2L)
 dem <- rasterize_terrain(gnd, res = 0.5, algorithm = tin())
 nlas <- las - dem
 
-writeRaster(dem, 'data/DEM/5255C.tif', overwrite=TRUE)
+writeRaster(dem, 'output/POC/dem.tif', overwrite=TRUE)
 
 # TODO: Compare the DEM to an aerial photo
 
@@ -115,7 +117,7 @@ plot(las)
 # 1) Filter down our point cloud
 # We **don't** use ReturnNumber == 1 as we might filter out occluded buildings
 
-nlas_filter <- filter_poi(nlas, Z >= 2, Classification == 6)
+nlas_filter <- filter_poi(nlas, Z >= 3, Classification == 6)
 
 # TODO: Figure out how we can use NumberOfReturns & ReturnNumber for:
 #         a) DEM creation
@@ -128,46 +130,64 @@ nlas_filter <- filter_poi(nlas, Z >= 2, Classification == 6)
 # TODO: Optimize dbscan parameters
 
 df <- data.frame(nlas_filter$X, nlas_filter$Y)
-dbscan_res <- dbscan(df, eps=1, minPts = 20)
+dbscan_res <- dbscan(df, eps=0.75, minPts = 20)
 
 nlas_filter@data$ClusterID <- dbscan_res$cluster
 las_clusters <- filter_poi(nlas_filter, ClusterID > 0)
 
 plot(las_clusters, color = "ClusterID")
 
-
 # 3) Wrap each cluster with a concave hull
 # TODO: Bump up tightness to get better wrapped angles
 #       AKA solve hull for minimum area full encasement
-
-bldg_hulls <- st_sfc(crs = 6653)
-for (id in unique(las_clusters$ClusterID)) {
-  building <- filter_poi(nlas_filter, ClusterID == id)
-  bldg_hull <- st_convex_hull(building)
-  bldg_hulls <- c(bldg_hulls, bldg_hull)
-}
-
-plot(bldg_hulls)
-
-# Filter out polygons w/ less than 20m of area
-buff_size <- 0.5
-fp_filtered <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(20, m^2))] %>% # Require >= 20m^2 of area
-  st_buffer(-1 * buff_size) %>% # Reduce area by 0.5m
-  st_buffer(buff_size) # Increase area by 0.5m
-
-
+# TODO: Improve performance by converting each cluster to a dataset(?)
 # TODO: Can we use coplanarity to identify each roof panel?
 # TODO: Implement Toula's least squares operations
+
+bldg_points <- st_sfc(crs=trg_crs)
+bldg_locations <- st_sfc(crs=trg_crs)
+bldg_hulls <- st_sfc(crs=trg_crs)
+
+for (id in unique(las_clusters$ClusterID)) {
+  bldg <- filter_poi(nlas_filter, ClusterID == id)
+  
+  point_feature <- st_as_sf(bldg) %>% 
+    select(ClusterID, geometry) %>% 
+    st_zm()
+  
+  # Save building points and approximate building centre
+  # Used when testing adjusted dbscan parameters, but otherwise skip
+  
+  #bldg_points <- rbind(bldg_points, point_feature)
+  #point_location <- st_sf(ID = id, geometry = st_sfc(st_point(c(mean(bldg$X), mean(bldg$Y))), crs=6653))
+  #bldg_locations <- rbind(bldg_locations, point_location)
+  
+  # Wrap the building with a hull
+  
+  bldg_hull <- point_feature %>% st_union() %>% st_concave_hull(ratio = 0.1)
+  bldg_hulls <- c(bldg_hulls, bldg_hull)
+  
+  #NOTE: Concave hulls performs better on general buildings, but not so well
+  #      when parts of buildings are obscured due to tree cover.
+}
+
+#st_write(bldg_points, 'output/POC/bldg_points.gpkg', delete_dsn=TRUE)
+#st_write(bldg_locations, 'output/POC/bldg_locations.gpkg', delete_dsn=TRUE)
+st_write(bldg_hulls, 'output/POC/bldg_hulls_0.1.gpkg', delete_dsn=TRUE)
+
+# 4) Filter out polygons w/ less than 20m of area & buffer out channels
+buff_size <- 0.5
+fp_filtered <- bldg_hulls[(st_area(bldg_hulls) >= units::set_units(75, m^2))] %>% # Require >= 20m^2 of area
+  st_buffer(-1 * buff_size) %>% # Reduce area by 0.5m
+  st_buffer(buff_size) # Increase area by 0.5m
+plot(fp_filtered)
 
 
 # Export Topological Datasets ---------------------------------------------
 
-# Write to file
-st_write(res_b, 'output/footprint/5255C/5255C.shp')
-
-dsm <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
-writeRaster(dsm, 'output/DSM/POC.tif', overwrite=TRUE)
-plot(dsm)
+#dsm <- rasterize_canopy(las, res = 0.5, algorithm = p2r(0.2, na.fill = tin()))
+#writeRaster(dsm, 'output/POC/dsm.tif', overwrite=TRUE)
+st_write(fp_filtered, 'output/POC/footprint-concave.gpkg', delete_dsn=TRUE)
 
 
 

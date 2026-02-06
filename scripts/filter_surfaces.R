@@ -1,5 +1,6 @@
-library("sf")
-library("terra")
+library(sf)
+library(terra)
+library(tidyverse)
  
 
 # TODO: Extract [Aspects, Slopes, Full Buildings, and combinations] as features
@@ -15,14 +16,41 @@ library("terra")
 
 
 # Digital surface model of the area
-dsm <- rast('output/DSM/POC.tif')
-dem <- rast('output/DEM/5255C.tif')
+dsm <- rast('output/POC/dsm.tif')
+dem <- rast('output/POC/dem.tif')
+
+dem
+global(dem, fun="mean", na.rm=TRUE)
+
+dsm
+global(dsm, fun="mean")
 
 # Annual insolation estimates for the area
 insolation <- rast('output/insolation/POC.tif')
 
+insolation
+global(insolation, fun = "mean")
+
+expanse(insolation)
+
+plot(insolation >= 800)
+
+plot(footprints)
+
+
 # Footprints of the site
-footprints <- st_read('output/footprint/5255C/5255C.shp')
+footprints <- st_read('output/POC/footprint.gpkg')
+footprints_gt <- st_read('output/POC/footprint-gt.gpkg') %>%
+  mutate(area = st_area(footprints_gt)) %>%
+  filter(area >= units::set_units(20, m^2))
+
+dim(footprints)
+sum(st_area(footprints))
+
+dim(footprints_gt)
+sum(footprints_gt$area)
+
+sum(st_area(st_intersection(footprints, footprints_gt)))
 
 # Load in the orthophoto
 rgb_photo <- rast("data/Orthophoto/5255C.tif") %>% 
@@ -90,11 +118,11 @@ plot(bldg_aspect_rcl)
 # TODO: Ask Brianne about that last step...
 
 
-ret <- c(bldg_insolation, bldg_slope, bldg_slope_rcl,
+# ret <- c(bldg_insolation, bldg_slope, bldg_slope_rcl,
          bldg_aspect, bldg_aspect_rcl,
          rasterize(footprints, bldg_insolation, field = "FID"))
 
-names(ret) <- c("Insolation", "Slope", "Slope Class",
+# names(ret) <- c("Insolation", "Slope", "Slope Class",
                 "Aspect", "Aspect Class", "Building ID")
 
 
@@ -102,7 +130,9 @@ names(ret) <- c("Insolation", "Slope", "Slope Class",
 # Locate the best locations! ----------------------------------------------
 
 # Surfaces must not be facing north
-aspect_mask <- bldg_aspect >= 45 & bldg_aspect <= 315
+aspect_mask <- !((bldg_aspect < 45 | bldg_aspect > 315) & bldg_slope > 5)
+plot(aspect_mask)
+
 # Surfaces must not have a slope over 60 degrees
 slope_mask <- bldg_slope <= 60
 # Surfaces must receive a minimum of 800 kWh/m^2
@@ -113,5 +143,15 @@ mask <- aspect_mask & slope_mask & insolation_mask
 accepted <- mask(bldg_insolation, mask, maskvalues = FALSE)
 plot(accepted)
 
+writeRaster(accepted, "output/POC/accepted.tif", overwrite=TRUE)
+
+accepted_poly <- as.polygons(accepted, dissolve=TRUE) %>% st_as_sf()
+st_write(accepted_poly, "output/POC/accepted.gpkg")
+
+
+
+expanse(is.na(accepted), byValue = TRUE)
+global(accepted, fun="mean", na.rm=TRUE)
+global(accepted, fun="sum", na.rm=TRUE) / 4
 
 
