@@ -8,6 +8,31 @@ library("dbscan")
 
 trg_crs <- 6653
 
+cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Data")
+st_crs(cat) <- trg_crs
+plot(cat)
+
+
+east <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5550A.las")
+st_crs(east) <- trg_crs
+
+las_check(east)
+
+west <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5261D.las")
+st_crs(west) <- trg_crs
+
+writeLAS(east, "C:/Users/tyler/Documents/LiDAR/Test/east.las")
+writeLAS(west, "C:/Users/tyler/Documents/LiDAR/Test/west.las")
+
+updated_cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Test")
+plot(updated_cat)
+
+plot(east)
+
+plot(west)
+
+plot(cat)
+summary(cat)
 
 # TODO & stuff
 
@@ -113,11 +138,76 @@ plot(las)
 
 # Building Footprint Identification ---------------------------------------
 
+# For our powerline identification, we'll be using eigen_values to identify
+# linear-ish points between the elevation of 4 to 20 m of elevation. Additionally,
+# we'll be de-noising upon the removal of these points to ensure extraneous points
+# are not missed (?)
+
 
 # 1) Filter down our point cloud
 # We **don't** use ReturnNumber == 1 as we might filter out occluded buildings
 
-nlas_filter <- filter_poi(nlas, Z >= 3, Classification == 6)
+nlas_filter <- filter_poi(nlas, Z >= 2.5, Classification == 6)
+
+# Extract HighVeg
+las_veg <- filter_poi(nlas, Classification == 5L)
+
+pl_data <- filter_poi(nlas, Classification == 0)
+
+# mt <- point_metrics
+ev <- point_eigenvalues(pl_data, r = 0.5)
+
+lim <- 2
+is_lin <- ev$eigen_largest > ev$eigen_medium * lim &
+  ev$eigen_largest > ev$eigen_smallest * lim
+
+linearity <- (ev$eigen_largest - ev$eigen_medium) / ev$eigen_largest
+
+pl_data <- add_attribute(pl_data, is_lin, "is_lin")
+pl_data <- add_attribute(pl_data, linearity, 'linearity')
+pl_data <- add_attribute(pl_data, ev$eigen_largest, 'largest')
+
+is_p_data <- add_attribute(pl_data, pl_data$linearity >= 0.8 & pl_data$Z >= 3.5 & pl_data$Z < 20, "is_powerline")
+plot(is_p_data, color="is_powerline")
+
+# TODO: Denoise to remove missed points..
+
+tib <- as_tibble(is_p_data@data)
+tib[is.na(tib$linearity),]$largest
+
+
+plot(pl_data, color="is_lin")
+plot(pl_data, color="linearity")
+
+
+
+lines <- segment_shapes(pl_data, shp_line(k = 5), "line_of_some_sort")
+ev
+
+# M1 <- point_metrics(las, ~plane_metrics2(X,Y,Z), k = 25, filter = ~ReturnNumber == 1)
+
+plot(filter_poi(nlas, Classification == 0 & Z > 4))
+
+
+# i) Create rasters of the nDSM and classification...
+
+ndsm <- rasterize_canopy(nlas_filter, res = 0.5, algorithm = p2r())
+writeRaster(ndsm, 'output/POC/ndsm.tif', overwrite=TRUE)
+
+polys <- as.polygons((ndsm > 0))
+polys_sf <- st_as_sf(polys)
+
+writeVector(polys, 'output/POC/polys.gpkg', overwrite=TRUE)
+
+
+buff_size <- 0.5
+fp_filt <- polys_sf[(st_area(polys_sf) >= units::set_units(75, m^2))] %>%
+  st_buffer(-1 * buff_size) %>% # Reduce area by 0.5m
+  st_buffer(buff_size) # Increase area by 0.5m
+plot(fp_filt)
+
+st_write(fp_filt, 'output/POC/polys_filt.gpkg', delete_dsn=TRUE)
+
 
 # TODO: Figure out how we can use NumberOfReturns & ReturnNumber for:
 #         a) DEM creation
