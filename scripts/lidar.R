@@ -1,6 +1,6 @@
 library("tidyverse")
 library("lidR")
-library("lidRviewer")
+#library("lidRviewer")
 library("sf")
 library("terra")
 library("RCSF")
@@ -8,31 +8,24 @@ library("dbscan")
 
 trg_crs <- 6653
 
-cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Data")
-st_crs(cat) <- trg_crs
-plot(cat)
+# A bunch of stuff to process MORE data...
 
-
-east <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5550A.las")
-st_crs(east) <- trg_crs
-
-las_check(east)
-
-west <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5261D.las")
-st_crs(west) <- trg_crs
-
-writeLAS(east, "C:/Users/tyler/Documents/LiDAR/Test/east.las")
-writeLAS(west, "C:/Users/tyler/Documents/LiDAR/Test/west.las")
-
-updated_cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Test")
-plot(updated_cat)
-
-plot(east)
-
-plot(west)
-
-plot(cat)
-summary(cat)
+# cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Data")
+# st_crs(cat) <- trg_crs
+# plot(cat)
+# east <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5550A.las")
+# st_crs(east) <- trg_crs
+# las_check(east)
+# west <- readLAS("C:/Users/tyler/Documents/LiDAR/Data/5261D.las")
+# st_crs(west) <- trg_crs
+# writeLAS(east, "C:/Users/tyler/Documents/LiDAR/Test/east.las")
+# writeLAS(west, "C:/Users/tyler/Documents/LiDAR/Test/west.las")
+# updated_cat <- readLAScatalog("C:/Users/tyler/Documents/LiDAR/Test")
+# plot(updated_cat)
+# plot(east)
+# plot(west)
+# plot(cat)
+# summary(cat)
 
 # TODO & stuff
 
@@ -145,29 +138,43 @@ plot(las)
 
 
 # 1) Filter down our point cloud
-# We **don't** use ReturnNumber == 1 as we might filter out occluded buildings
+# We **don't** use ReturnNumber == 1 as we might filter out occluded buildings (?)
 
+# Filter down to building points
 nlas_filter <- filter_poi(nlas, Z >= 2.5, Classification == 6)
 
 # Extract HighVeg
 las_veg <- filter_poi(nlas, Classification == 5L)
 
-pl_data <- filter_poi(nlas, Classification == 0)
 
-# mt <- point_metrics
-ev <- point_eigenvalues(pl_data, r = 0.5)
 
+# Identify Powerlines -----------------------------------------------------
+
+# Filter down to points above 2 meters
+las_pl <- filter_poi(nlas, Z > 2) 
+        # filter_poi(nlas, Classification == 0) 
+
+# Calculate eigenvalues in a 0.5m radius
+las_pl_ev <- point_eigenvalues(las_pl, r = 0.5)
+
+# Use JR's method for calculating linearity 
 lim <- 2
-is_lin <- ev$eigen_largest > ev$eigen_medium * lim &
-  ev$eigen_largest > ev$eigen_smallest * lim
+is_linear_v1 <- las_pl_ev$eigen_largest > las_pl_ev$eigen_medium * lim & las_pl_ev$eigen_largest > las_pl_ev$eigen_smallest * lim
 
-linearity <- (ev$eigen_largest - ev$eigen_medium) / ev$eigen_largest
+# Use the "typical" calculation for linearity
+linearity <- (las_pl_ev$eigen_largest - las_pl_ev$eigen_medium) / las_pl_ev$eigen_largest
+is_linear_v2 <- linearity >= 0.8 & las_pl$Z >= 3.5 & las_pl$Z < 20
 
-pl_data <- add_attribute(pl_data, is_lin, "is_lin")
-pl_data <- add_attribute(pl_data, linearity, 'linearity')
-pl_data <- add_attribute(pl_data, ev$eigen_largest, 'largest')
+# Add new linearity attributes to the LAS data
 
-is_p_data <- add_attribute(pl_data, pl_data$linearity >= 0.8 & pl_data$Z >= 3.5 & pl_data$Z < 20, "is_powerline")
+las_pl <- add_attribute(las_pl, is_linear_v1, "is_linear_v1") %>% 
+  add_attribute(is_linear_v2, 'is_linear_v2') %>% 
+  add_attribute(linearity, 'linearity')
+#add_attribute(las_pl_ev$eigen_largest, 'largest')
+
+plot(las_pl, color="is_linear_v1")
+plot(las_pl, color="is_linear_v2")
+
 plot(is_p_data, color="is_powerline")
 
 # TODO: Denoise to remove missed points..
