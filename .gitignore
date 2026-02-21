@@ -6,6 +6,7 @@ uv.lock
 data/
 output/
 /temp
+/scripts/sandbox
 
 # R
 .Rproj.user
