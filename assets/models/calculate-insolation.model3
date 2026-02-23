@@ -18,12 +18,37 @@
       </Option>
       <Option name="component_description" value="Solar Radiation: Solar Energy of Builing Envelopes (SEBE)" type="QString"/>
       <Option name="component_height" value="30" type="double"/>
-      <Option name="component_pos_x" value="842" type="double"/>
-      <Option name="component_pos_y" value="450" type="double"/>
+      <Option name="component_pos_x" value="850" type="double"/>
+      <Option name="component_pos_y" value="442" type="double"/>
       <Option name="component_width" value="200" type="double"/>
       <Option name="dependencies"/>
       <Option name="id" value="umep:Solar Radiation: Solar Energy of Builing Envelopes (SEBE)_1" type="QString"/>
       <Option name="outputs" type="Map">
+        <Option name="output-dir" type="Map">
+          <Option name="child_id" value="umep:Solar Radiation: Solar Energy of Builing Envelopes (SEBE)_1" type="QString"/>
+          <Option name="color" value="" type="QString"/>
+          <Option name="comment" type="Map">
+            <Option name="color" value="" type="QString"/>
+            <Option name="component_description" value="" type="QString"/>
+            <Option name="component_height" value="60" type="double"/>
+            <Option name="component_pos_x" value="0" type="double"/>
+            <Option name="component_pos_y" value="0" type="double"/>
+            <Option name="component_width" value="100" type="double"/>
+            <Option name="outputs_collapsed" value="true" type="bool"/>
+            <Option name="parameters_collapsed" value="true" type="bool"/>
+          </Option>
+          <Option name="component_description" value="output-dir" type="QString"/>
+          <Option name="component_height" value="30" type="double"/>
+          <Option name="component_pos_x" value="850" type="double"/>
+          <Option name="component_pos_y" value="584" type="double"/>
+          <Option name="component_width" value="200" type="double"/>
+          <Option name="default_value" type="invalid"/>
+          <Option name="mandatory" value="false" type="bool"/>
+          <Option name="name" value="output-dir" type="QString"/>
+          <Option name="output_name" value="OUTPUT_DIR" type="QString"/>
+          <Option name="outputs_collapsed" value="true" type="bool"/>
+          <Option name="parameters_collapsed" value="true" type="bool"/>
+        </Option>
         <Option name="rooftop-irradiance" type="Map">
           <Option name="child_id" value="umep:Solar Radiation: Solar Energy of Builing Envelopes (SEBE)_1" type="QString"/>
           <Option name="color" value="" type="QString"/>
@@ -39,8 +64,8 @@
           </Option>
           <Option name="component_description" value="rooftop-irradiance" type="QString"/>
           <Option name="component_height" value="30" type="double"/>
-          <Option name="component_pos_x" value="838" type="double"/>
-          <Option name="component_pos_y" value="572" type="double"/>
+          <Option name="component_pos_x" value="848" type="double"/>
+          <Option name="component_pos_y" value="634" type="double"/>
           <Option name="component_width" value="200" type="double"/>
           <Option name="default_value" type="invalid"/>
           <Option name="mandatory" value="false" type="bool"/>
@@ -170,7 +195,24 @@
       </Option>
     </Option>
   </Option>
-  <Option name="designerParameterValues"/>
+  <Option name="designerParameterValues" type="Map">
+    <Option name="building__ground_dsm" value="D:/Dev/Geomatics/kamloops-solar/output/test-01/building_dsm.tif" type="QString"/>
+    <Option name="meteorological_data_umeped" value="D:\Dev\Geomatics\kamloops-solar\data\Weather\metprocessor-output-kamloops-a.txt" type="QString"/>
+    <Option name="outputdir" value="D:\Dev\Geomatics\kamloops-solar\output\test-01" type="QString"/>
+    <Option name="rooftopirradiance" type="QgsProcessingOutputLayerDefinition">
+      <Option type="Map">
+        <Option name="create_options" type="Map">
+          <Option name="fileEncoding" value="windows-1252" type="QString"/>
+        </Option>
+        <Option name="sink" type="Map">
+          <Option name="active" value="true" type="bool"/>
+          <Option name="type" value="1" type="int"/>
+          <Option name="val" value="D:/Dev/Geomatics/kamloops-solar/output/test-01/insolation.tif" type="QString"/>
+        </Option>
+      </Option>
+    </Option>
+    <Option name="vegetation_dsm" value="D:/Dev/Geomatics/kamloops-solar/output/test-01/chm.tif" type="QString"/>
+  </Option>
   <Option name="groupBoxes"/>
   <Option name="help"/>
   <Option name="internal_version" value="Version2" type="QString"/>
@@ -202,6 +244,22 @@
       <Option name="metadata"/>
       <Option name="name" value="meteorological_data_umeped" type="QString"/>
       <Option name="parameter_type" value="file" type="QString"/>
+    </Option>
+    <Option name="outputdir" type="Map">
+      <Option name="create_by_default" value="true" type="bool"/>
+      <Option name="default" type="invalid"/>
+      <Option name="defaultGui" type="invalid"/>
+      <Option name="description" value="output-dir" type="QString"/>
+      <Option name="flags" value="0" type="int"/>
+      <Option name="help" value="" type="QString"/>
+      <Option name="metadata" type="Map">
+        <Option name="_modelChildId" value="umep:Solar Radiation: Solar Energy of Builing Envelopes (SEBE)_1" type="QString"/>
+        <Option name="_modelChildOutputName" value="output-dir" type="QString"/>
+        <Option name="_modelChildProvider" value="umep" type="QString"/>
+      </Option>
+      <Option name="name" value="outputdir" type="QString"/>
+      <Option name="parameter_type" value="folderDestination" type="QString"/>
+      <Option name="supports_non_file_outputs" value="true" type="bool"/>
     </Option>
     <Option name="rooftopirradiance" type="Map">
       <Option name="create_by_default" value="false" type="bool"/>
