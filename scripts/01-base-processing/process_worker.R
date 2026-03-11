@@ -19,8 +19,7 @@ for (i in 1:length(tiles)) {
   cat(indent, tiles[i], '\n')
 }
 
-
-# Set up important directory stuff
+# Set up important directory information
 
 data_dir <- "C:/Users/tyler/Documents/LiDAR/Data/main"
 out_dir <- "D:/Dev/Geomatics/kamloops-solar/output/batch"
@@ -46,8 +45,6 @@ buff_size <- 0.5
 
 # Minimum building size to consider
 min_area <- units::set_units(75, m^2)
-
-
 
 # Read our target LAS tiles into a catalogue
 trg_tiles <- paste0(data_dir, '/' , tiles, '.las')

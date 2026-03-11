@@ -4,8 +4,8 @@ library("sf")
 library("terra")
 
 # Directories
-data_dir <- "data/LiDAR/test-0"
-out_dir <- "output/test-01"
+IN_DIR <- "data/LiDAR/clean"
+OUT_DIR <- "output/01-base-geospatial"
 
 # CRS of our LAS data
 crs_out <- 26910
@@ -23,19 +23,18 @@ min_area <- units::set_units(75, m^2)
 
 # Normalize Point Cloud ---------------------------------------------------
 
-
 # Catalog for normalizing the point cloud
-ctg <- readLAScatalog(paste(data_dir, '/source', sep=''))
+ctg <- readLAScatalog(paste(IN_DIR, '/source', sep=''))
 
 # Generate a DEM of the study area
 dem <- rasterize_terrain(ctg, sr, tin())
 
 # Save the DEM
 crs(dem) <- crs_str
-writeRaster(dem, paste(out_dir, '/kamloops-dem.tif', sep=''), overwrite=TRUE)
+writeRaster(dem, paste(OUT_DIR, '/kamloops-dem.tif', sep=''), overwrite=TRUE)
 
 # Set up the output for the normalized point clouds
-opt_output_files(ctg) <- paste(data_dir, "/normalized/norm_{ID}", sep='')
+opt_output_files(ctg) <- paste(IN_DIR, "/normalized/norm_{ID}", sep='')
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
 # Normalize the point cloud
@@ -46,7 +45,7 @@ normalize_height(ctg, dem)
 
 
 # Catalog for identifying building footprints
-ctg_norm <- readLAScatalog(paste(data_dir, "/normalized", sep=''))
+ctg_norm <- readLAScatalog(paste(IN_DIR, "/normalized", sep=''))
 
 # Filter down to buildings & points above 2m
 opt_filter(ctg_norm) <- '-keep_class 6 -drop_z_below 2.5'
@@ -68,7 +67,7 @@ bldg_fp <- bldg_poly %>% filter(st_area(geometry) >= min_area) %>%
   st_buffer(-1 * buff_size) %>% st_buffer(buff_size)
 
 # Write results out
-st_write(bldg_fp, paste(out_dir, '/kamloops-fp.gpkg', sep=''), delete_dsn=TRUE)
+st_write(bldg_fp, paste(OUT_DIR, '/kamloops-fp.gpkg', sep=''), delete_dsn=TRUE)
 
 
 
@@ -76,7 +75,7 @@ st_write(bldg_fp, paste(out_dir, '/kamloops-fp.gpkg', sep=''), delete_dsn=TRUE)
 
 
 # Fresh catalog for building DSM
-ctg <- readLAScatalog(paste(data_dir, '/source', sep=''))
+ctg <- readLAScatalog(paste(IN_DIR, '/source', sep=''))
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 opt_filter(ctg) <- '-keep_class 2 6'
 
@@ -92,14 +91,14 @@ while(global(result, function(x) any(is.na(x)))[,1]) {
 
 # Write out building DSM
 crs(result)="EPSG:26910"
-writeRaster(result, paste(out_dir, '/building_dsm.tif', sep=''), overwrite=TRUE)
+writeRaster(result, paste(OUT_DIR, '/building_dsm.tif', sep=''), overwrite=TRUE)
 
 
 # Canopy Height Model -----------------------------------------------------
 
 
 # Fresh catalog for CHM
-ctg <- readLAScatalog(paste(data_dir, '/normalized', sep=''))
+ctg <- readLAScatalog(paste(IN_DIR, '/normalized', sep=''))
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 opt_filter(ctg) <- '-keep_class 3 5 -drop_z_below 1'
 
@@ -108,7 +107,7 @@ dsm_veg <- rasterize_canopy(ctg, res=sr, p2r(0.2)) %>%
   replace(is.na(.), 0)
 
 crs(dsm_veg) <- crs_str
-writeRaster(dsm_veg, paste(out_dir, '/chm.tif', sep=''), overwrite=TRUE)
+writeRaster(dsm_veg, paste(OUT_DIR, '/chm.tif', sep=''), overwrite=TRUE)
 
 
 

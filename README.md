@@ -1,15 +1,12 @@
-# kamloops-solar
-My project repository for mapping Kamloops' rooftop solar potential
+# Open Source Solar Insolation Evaluation
 
-**Current Workflow**
+This repository houses the code written for my capstone project. The project's goal was to develop an open-source workflow for evaluating the solar insolation potential of rooftops across British Columbia, using Kamloops as a case study. The workflow can be summarized in 4 (non-linear) steps:
 
-*Identifying Building Footprints*
+0. Data acquisition and cleaning
+1. Building identification
+2. Annual solar irradiation modelling
+3. Suitability criteria analysis
 
-1. Create a DEM and DSM from the point cloud.
+The workflow stitches together analysis using a series of open-source technologies, including QGIS, UMEP, and `lidR`, to generate a pipeline able to iteratively transform data towards outputs. The iterative process enables better iteration & error management while additionally enabling a natural way to separate the scripts.
 
-        I'm using the lidR package (lastools requires $$$)
-        Requires the lidRviewer package for visualizations at first.
-
-        Ideally we'd be classifying the ground points THEN generating a DTM with those points (w/ TIN)
-
-
+The project has not yet concluded, and as such there's not yet a full open-source workflow available for broader application across British Columbia. Keep an eye out, as I'll be updating this repository constantly and releasing it soon!
