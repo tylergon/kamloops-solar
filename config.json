@@ -1,0 +1,11 @@
+{
+    "crs": 26910,
+    "chunk_size": 250,
+    "chunk_buffer": 50,
+    "spatial_resolution": 0.5,
+    "channel_buffer": 0.5,
+    "min_area": 75,
+    "input_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Input",
+    "output_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Output",
+    "scratch_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Scratch"
+}
