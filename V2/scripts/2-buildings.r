@@ -4,6 +4,8 @@ library(lidR)
 library(sf)
 library(terra)
 
+# Assumes a normalized point cloud has been generated
+
 config <- read_json("config.json")
 
 # Read in the normalized point cloud
