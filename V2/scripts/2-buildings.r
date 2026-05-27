@@ -14,9 +14,7 @@ ctg_norm <- readLAScatalog(norm_path)
 
 opt_chunk_size(ctg_norm) <- config$chunk_size
 opt_chunk_buffer(ctg_norm) <- config$chunk_buffer
-
-
-# TODO: Do we need to crop to our AOI?
+# TODO: opt_chunk_alignment(ctg) <- c(1000, 1000)
 
 
 # Adjust catalogue configuration

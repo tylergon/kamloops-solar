@@ -19,3 +19,4 @@ orchestrated from a script managing the entire AOI.
 ### The Docket
 
 - [ ] Fix the CRS errors
+- [ ] Should I extract grid creation into a script called by the orchestrator?
