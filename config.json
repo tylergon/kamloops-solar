@@ -5,9 +5,9 @@
     "spatial_resolution": 0.5,
     "channel_buffer": 0.5,
     "min_area": 75,
-    "input_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Input",
-    "output_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Output",
-    "scratch_dir": "C:\\Users\\Tyler\\Desktop\\PV\\Scratch",
+    "input_dir": "/app/data/Input",
+    "output_dir": "/app/data/Output",
+    "scratch_dir": "/app/data/Scratch",
     "SEBE": {
         "albedo": 0.15
     }
