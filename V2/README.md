@@ -19,4 +19,6 @@ orchestrated from a script managing the entire AOI.
 ### The Docket
 
 - [ ] Fix the CRS errors
-- [ ] Should I extract grid creation into a script called by the orchestrator?
+- [x] Should I extract grid creation into a script called by the orchestrator?
+- [ ] Should we instead be performing input generation, SEBE operation, and result combination in one script?
+- [ ] Utility script for file names?

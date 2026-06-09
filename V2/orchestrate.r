@@ -1,22 +1,24 @@
-library(tidyverse)
 library(jsonlite)
 library(lidR)
 library(sf)
 library(terra)
 library(callr)
 library(fs)
+library(stringr)
 
 config <- fromJSON("config.json")
+
+# TODO: UMEP the input TMY here
 
 # 1. Normalize
 
 # Switch to parallel?
 
-rscript("V2/scripts/1-normalize.r")
+# rscript("V2/scripts/1-normalize.r")
 
 # 2. Building Identification
 
-rscript("V2/scripts/2-buildings.r")
+# rscript("V2/scripts/2-buildings.r")
 
 # ---
 
@@ -26,7 +28,7 @@ rscript("V2/scripts/2-buildings.r")
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
-  pattern = "*.copc.laz"
+  pattern = "*.las" # TODO: Convert to *.copc.las
 )
 
 # Configuration
@@ -39,21 +41,22 @@ opt_chunk_buffer(ctg) <- config$chunk_buffer
 
 # Retile and create a subdirectory pattern to loop SEBE through
 # TODO: Switch to XLEFT YBOTTOM (?)
-retile_dir <- paste0(config$scratch_dir, "\\SEBE")
-opt_output_files(ctg) <- paste0(retile_dir, "\\{ID}\\retile_{ID}")
+
+retile_dir <- paste0(config$scratch_dir, "/SEBE")
+opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
 newctg <- catalog_retile(ctg)
 
 # Loop through the subdirectories creating SEBE inputs
 for (tile in list.files(retile_dir)) {
-  wd <- path_abs(str_glue("{retile_dir}\\{tile}"))
-  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
+  wd <- path_abs(str_glue("{retile_dir}/{tile}"))
+  # rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
 }
 
 # 4. SEBE
 
 for (tile in list.files(retile_dir)) {
-  wd <- path_abs(str_glue("{retile_dir}\\{tile}"))
-  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
+  wd <- path_abs(str_glue("{retile_dir}/{tile}"))
+  rscript("V2/scripts/4-sebe_orchestrator.r", cmdargs = c(wd))
 }
 
 # 5. Suitability analysis

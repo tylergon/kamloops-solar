@@ -1,4 +1,4 @@
-library(tidyverse)
+library(stringr)
 library(jsonlite)
 library(lidR)
 library(sf)
@@ -10,7 +10,7 @@ config <- read_json("config.json")
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
-  pattern = "*.copc.laz"
+  pattern = "*.las" # TODO: Convert to copc
 )
 
 st_crs(ctg) <- 26910
@@ -18,6 +18,7 @@ st_crs(ctg) <- 26910
 # Configure chunking
 opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
+
 # TODO: opt_chunk_alignment(ctg) <- c(1000, 1000)
 
 # Generate a DEM of the study area
@@ -29,6 +30,7 @@ dem <- rasterize_terrain(
 
 # Save the DEM - is this necessary / should it be chunked?
 dem_path <- paste(config$output_dir, "dem.tif", sep = "/")
+message(str_glue(">>> OUTPUT DEM @ {dem_path}"))
 writeRaster(dem, dem_path, overwrite = TRUE)
 
 # Set up the output for the normalized point clouds

@@ -5,9 +5,10 @@
     "spatial_resolution": 0.5,
     "channel_buffer": 0.5,
     "min_area": 75,
-    "input_dir": "/app/data/Input",
-    "output_dir": "/app/data/Output",
-    "scratch_dir": "/app/data/Scratch",
+    "project_dir": "/home/tygon804/kamloops-solar",
+    "input_dir": "/home/tygon804/Data/Input",
+    "output_dir": "/home/tygon804/Data/Output",
+    "scratch_dir": "/home/tygon804/Data/Scratch",
     "SEBE": {
         "albedo": 0.15
     }

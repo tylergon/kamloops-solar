@@ -1,16 +1,18 @@
-library(tidyverse)
+library(stringr)
 library(jsonlite)
 library(lidR)
 library(sf)
 library(terra)
 
-# args <- commandArgs(trailingOnly = TRUE)
-# wd <- args[1]
-wd <- "C:/Users/Tyler/Desktop/PV/Scratch/SEBE/1"
-
-print(str_glue("Starting.........{wd}"))
-
+# Configuration
 config <- read_json("config.json")
+
+# Arguments
+args <- commandArgs(trailingOnly = TRUE)
+wd <- args[1]
+
+# Confirm operation
+message(str_glue("> SEBE::INPUTS::BEGIN ~ {wd}"))
 
 
 # ~~ 1. Building & Ground DSM ~~
@@ -18,7 +20,7 @@ config <- read_json("config.json")
 
 ctg <- readLAScatalog(wd)
 st_crs(ctg) <- 26910
-opt_chunk_size(ctg) <- 0 # Lazy...
+opt_chunk_size(ctg) <- 0 # TODO Fix this lazy code
 
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
@@ -26,17 +28,22 @@ ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
 opt_filter(ctg) <- "-keep_class 2 6"
 
+message(">>> GENERATING B&G DSM")
+
 # Generate a DSM using the filtered point cloud
 dsm <- rasterize_canopy(
   ctg, config$spatial_resolution,
   algorithm = p2r(0.2, na.fill = tin())
 )
 
+message(">>> COMPLETE B&G DSM")
+
 # COULD I INSTEAD USE TIN TO INTERPOLATE THESE SURFACES?
 
 # Fill in NA values
 w <- 1
 while (global(dsm, function(x) any(is.na(x)))[, 1]) {
+  message(str_glue(">>> Filling Pixels ~ R{ceiling(w/2)}"))
   w <- w + 2
   dsm <- focal(
     dsm,
@@ -44,6 +51,7 @@ while (global(dsm, function(x) any(is.na(x)))[, 1]) {
   )
 }
 
+message(">>> Writing DSM")
 writeRaster(
   dsm,
   paste0(wd, "/dsm.tif"),
@@ -55,33 +63,21 @@ writeRaster(
 
 
 norm_path <- paste0(config$scratch_dir, "/normalized/")
-norm_las <- readLAScatalog(norm_path) %>% clip_roi(st_bbox(ctg))
+norm_las <- readLAScatalog(norm_path) |> clip_roi(st_bbox(ctg))
 
 # Filter down to only vegetation classes (above 1m)
 norm_las <- filter_poi(norm_las, Classification %in% c(3, 5) & Z >= 1)
 
 # Create a DSM of just the vegetation layer & write it out
-chm <- rasterize_canopy(norm_las, res = config$spatial_resolution, p2r(0.2)) %>%
-  replace(is.na(.), 0)
+message(">>> Generating CHM")
+chm <- rasterize_canopy(norm_las, res = config$spatial_resolution, p2r(0.2))
+chm[is.na(chm)] <- 0
 
+message(">>> Writing CHM")
 writeRaster(
   chm,
   paste0(wd, "/chm.tif"),
   overwrite = TRUE
 )
 
-print(str_glue("Complete.........{wd}"))
-
-slope <- terrain(dsm, "slope", neighbors = 8)
-writeRaster(
-  slope,
-  paste0(wd, "/slope.tif"),
-  overwrite = TRUE
-)
-
-aspect <- terrain(dsm, "aspect", neighbors = 8)
-writeRaster(
-  aspect,
-  paste0(wd, "/aspect.tif"),
-  overwrite = TRUE
-)
+message(str_glue("> SEBE::INPUTS::COMPLETE"))
