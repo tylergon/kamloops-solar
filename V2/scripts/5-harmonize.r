@@ -4,7 +4,7 @@ library(jsonlite)
 library(fs)
 library(terra)
 
-config <- fromJSON("config.json")
+config <- fromJSON("config.json")drtbg
 
 # Utility function to combine our SEBE inputs/outputs into citywide rasters
 harmonize_dataset <- function (file_name) {

@@ -11,11 +11,7 @@ config <- fromJSON("config.json")
 # a couple of things to keep an eye on for optimization
     # edges around rooftop perimiters have HIGH slopes
     # pixels in contiguous panels have similar aspect
-    # flat panels have crazy aspects
-
-# an idea Annie had was to use statistical clustering to determine alikeness
-# perhaps for each building we cluster pixels based on variables
-    # e.g. slope, aspect
+    # flat panels have crazy aspects ***** IT BECAME A PROBLEM I KNEW IT DUDDDDDE
 
 # how do we deal with bordering area? assume it's required backoff?
 
@@ -60,47 +56,47 @@ bldg_poly <- as.polygons(bldg_rast) |>
 
 # Crop and mask the raster down to the individual building
 
-bldg <- bldg_poly[1,]
 
-# Generate DBSCAN variables
-# TODO: Include elevation?
-bldg_slope <- crop(slope, bldg, mask = TRUE)
-bldg_aspect <- crop(aspect, bldg, mask = TRUE)
-
-# Generate a data frame encoding all our variables for DBSCAN
-features <- as.data.frame(c(bldg_slope, bldg_aspect), xy = TRUE)
-    na.omit()
-# TODO: Do we want XY? Maybe just group based on slope / aspect than separate non-touching px
+# Loop through the buildings and perform the analysis
 
 
-# Perform DBSCAN
+collection <- sprc()
+for (i in seq_len(nrow(bldg_poly))) {
+    bldg <- bldg_poly[i,]
 
-features_scaled <- scale(features)
-# db <- dbscan(features_scaled, eps = 0.5, minPts = 5)
-
-d <- dist(features_scaled)
-db <- dbscan(d, eps = 0.5, minPts = 5, search = "dist")
-
-#kNNdistplot(features_scaled, k = 4)
-#abline(h = 0.5, col = "red")         # adjust h to elbow value
+    # Crop out the buildings features
+    #       ** TODO: Low slope shouldn't have aspect. Reuse class from earlier?
+    bldg_slope <- crop(slope, bldg, mask = TRUE)
+    bldg_aspect <- crop(aspect, bldg, mask = TRUE)
 
 
+    # Generate a data frame encoding our variables for DBSCAN
+    #       ** TODO... Do we care about XY or pixel height?
+    features <- as.data.frame(c(bldg_slope, bldg_aspect), xy = TRUE) |>
+        na.omit()
 
 
+    # Handle edge cases (TODO : Deeper understanding of causes)
+    #       1. No features are in the area
+    #       2. TODO ~ Scaling error... ?
+    if (nrow(features) == 0) {
+        next
+    }
 
-# Define the operation to perform on each building...
+    message(str_glue(">>> Initiating DBSCAN [{i}/{nrow(bldg_poly)}]"))
 
+    # TODO: Consider scaling our features...
+    db <- dbscan(features[, c("slope", "aspect")], eps = 0.5, minPts = 5)
 
+    # Assign our features their cluster number and rebuild a raster
+    features$cluster <- db$cluster
+    add(collection) <- rast(
+        features[, c("x", "y", "cluster")],
+        crs = crs(bldg_slope),
+        extent = ext(bldg_slope),
+    )
+}
 
-
-# Method
-
-# Performed by looping through each building in the location
-
-# Step 1
-    # Take the suitable locations
-    # Add their aspect & slope calculated from the DEM
-
-# Step 2
-    # Perform clustering
-
+# Write out our collection
+r <- mosaic(collection, fun = "mean")
+writeRaster(r, fs::path(config$output_dir, "clusters.tif"), overwrite=TRUE)
