@@ -18,6 +18,20 @@ opt_chunk_buffer(ctg_norm) <- config$chunk_buffer
 # Adjust catalogue configuration
 ctg_norm@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
+
+# TODO: REMOVE START
+
+tmp <- rasterize_terrain(
+  ctg_norm,
+  config$spatial_resolution,
+  tin()
+)
+
+writeRaster(tmp, fs::path(config$output_dir, 'norm_dsm.tif'))
+
+# TODO: REMOVE FINISH
+
+
 # Filter down to buildings & points above 2m
 opt_filter(ctg_norm) <- "-keep_class 6 -drop_z_below 2.5"
 

@@ -4,7 +4,7 @@ library(jsonlite)
 library(fs)
 library(terra)
 
-config <- fromJSON("config.json")drtbg
+config <- fromJSON("config.json")
 
 # Utility function to combine our SEBE inputs/outputs into citywide rasters
 harmonize_dataset <- function (file_name) {
@@ -33,3 +33,14 @@ writeRaster(bldg_grnd_dsm, fs::path(config$output_dir, "buildings_and_ground.tif
 insolation <- harmonize_dataset('Energyyearroof.tif')
 writeRaster(insolation, fs::path(config$output_dir, "insolation.tif"), overwrite = TRUE)
 
+# Merge CHM results
+chm <- harmonize_dataset('chm.tif')
+writeRaster(chm, fs::path(config$output_dir, "chm.tif"), overwrite = TRUE)
+
+# Slope
+slope <- terrain(bldg_grnd_dsm, v="slope", neighbors=8, unit="degrees")
+writeRaster(slope, fs::path(config$output_dir, "slope.tif"), overwrite = TRUE)
+
+# Aspect
+aspect <- terrain(bldg_grnd_dsm, v = "aspect", neighbors = 8, unit="degrees")
+writeRaster(aspect, fs::path(config$output_dir, "aspect.tif"), overwrite = TRUE)

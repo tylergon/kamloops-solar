@@ -43,14 +43,16 @@ opt_chunk_buffer(ctg) <- config$chunk_buffer
 # TODO: Switch to XLEFT YBOTTOM (?)
 
 retile_dir <- paste0(config$scratch_dir, "/SEBE")
-opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
-newctg <- catalog_retile(ctg)
+# opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
+# newctg <- catalog_retile(ctg)
 
 # Loop through the subdirectories creating SEBE inputs
 for (tile in list.files(retile_dir)) {
   wd <- path_abs(str_glue("{retile_dir}/{tile}"))
-  # rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
+  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
 }
+
+quit()
 
 # 4. SEBE
 
