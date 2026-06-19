@@ -16,10 +16,9 @@ ctg <- readLAScatalog(
 st_crs(ctg) <- 26910
 
 # Configure chunking
+# TODO: Chunk alignment?
 opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
-
-# TODO: opt_chunk_alignment(ctg) <- c(1000, 1000)
 
 # Generate a DEM of the study area
 dem <- rasterize_terrain(

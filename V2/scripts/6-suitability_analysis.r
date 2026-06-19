@@ -20,7 +20,7 @@ slope_bins <- matrix(c(
     60, 90, 3 # Too steep
 ), ncol = 3, byrow = TRUE)
 
-slope <- terrain(bldg_grnd_dsm, v="slope", neighbors=8, unit="degrees")
+  
 slope_cl <- classify(slope, rcl = slope_bins, include.lowest = TRUE, right = TRUE)
 
 # Classify pixels by aspect

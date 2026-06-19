@@ -11,6 +11,7 @@ message(str_glue(">>> SEBE::BEGIN ~ {wd}"))
 config <- fromJSON("config.json")
 
 # Input
+
 met_path <- fs::path(config$input_dir, "metprocessor-output-kamloops-a.txt")
 dsm_path <- fs::path(wd, "dsm.tif")
 chm_path <- fs::path(wd, "chm.tif")
