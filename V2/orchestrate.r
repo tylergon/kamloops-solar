@@ -6,6 +6,7 @@ library(callr)
 library(fs)
 library(stringr)
 library(future)
+library(furrr)
 
 config <- fromJSON("config.json")
 
@@ -43,8 +44,8 @@ opt_chunk_buffer(ctg) <- config$chunk_buffer
 
 retile_dir <- fs::path(config$scratch_dir, "SEBE")
 
-# opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
-# newctg <- catalog_retile(ctg)
+opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
+newctg <- catalog_retile(ctg)
 
 # TODO: Record boundaries
 
@@ -53,11 +54,18 @@ retile_dir <- fs::path(config$scratch_dir, "SEBE")
 tiles <- list.files(retile_dir, full.name = TRUE)
 
 
+plan(multisession, workers = 21)
 
+print("Engaging in fun activity")
+
+future_map(tiles, function (tile) {
+  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) # TODO: Switch to processx(?)
+})
+
+quit()
 
 for (tile in list.files(retile_dir)) {
-  wd <- path_abs(str_glue("{retile_dir}/{tile}"))
-  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(wd))
+  
 }
 
 # 4. SEBE
