@@ -65,3 +65,7 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Log files
+SuPy.log
+run.log
