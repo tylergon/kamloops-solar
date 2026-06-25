@@ -69,3 +69,6 @@ rsconnect/
 # Log files
 SuPy.log
 run.log
+
+# LAS stuff
+.las
