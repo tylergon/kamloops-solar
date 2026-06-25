@@ -53,28 +53,22 @@ newctg <- catalog_retile(ctg)
 
 tiles <- list.files(retile_dir, full.name = TRUE)
 
-
 plan(multisession, workers = 21)
 
-print("Engaging in fun activity")
+future_map(tiles, \(tile) {
+  # TODO: Switch to processx to minimize overhead
+  tile_no <- basename(tile)
+  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) 
 
-future_map(tiles, function (tile) {
-  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) # TODO: Switch to processx(?)
+  rscript(
+    "V2/scripts/4-sebe_orchestrator.r",
+    cmdargs = c(tile),
+    stdout = fs::path(config$scratch_dir, "Logs", "4-sebe_orchestrator", tile_no, ext = "log"),
+    stderr = "2>&1"
+  )
 })
 
-quit()
-
-for (tile in list.files(retile_dir)) {
-  
-}
-
-# 4. SEBE
-
-# TODO: Parallelize...
-for (tile in list.files(retile_dir)) {
-  wd <- path_abs(str_glue("{retile_dir}/{tile}"))
-  # rscript("V2/scripts/4-sebe_orchestrator.r", cmdargs = c(wd))
-}
+plan(sequential)
 
 # 5. Stitch together the results
 

@@ -12,6 +12,7 @@ output/
 .Rproj.user
 .Rhistory
 .RDataTmp*
+Rplots.pdf
 
 # History files
 .Rhistory
