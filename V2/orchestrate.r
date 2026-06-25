@@ -11,52 +11,39 @@ library(furrr)
 config <- fromJSON("config.json")
 
 # TODO: UMEP the input TMY here
+# TODO: Record tile boundaries during Retile to smooth reconstruction
 
 # 1. Normalize
-
-# Switch to parallel?
-
 # rscript("V2/scripts/1-normalize.r")
 
 # 2. Building Identification
-
 # rscript("V2/scripts/2-buildings.r")
-
-# ---
 
 # 3. Orchestrate SEBE operation
 
-# Read in relevant LAS data
+# Read in LiDAR
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
   pattern = "*.las" # TODO: Convert to *.copc.las
 )
 
-# Configuration
-
+# Update catalog config
 st_crs(ctg) <- config$crs
-
 opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
 
 # Retile and create a subdirectory pattern to loop SEBE through
-
 retile_dir <- fs::path(config$scratch_dir, "SEBE")
-
 opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
 newctg <- catalog_retile(ctg)
 
-# TODO: Record boundaries
-
-# Loop through the subdirectories creating SEBE inputs
-
-tiles <- list.files(retile_dir, full.name = TRUE)
-
+# Prep parallelization
 plan(multisession, workers = 21)
 
+# Loop through the subdirectories creating SEBE inputs
+tiles <- list.files(retile_dir, full.name = TRUE)
 future_map(tiles, \(tile) {
-  # TODO: Switch to processx to minimize overhead
   tile_no <- basename(tile)
   rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) 
 
@@ -68,12 +55,14 @@ future_map(tiles, \(tile) {
   )
 })
 
+# Tear down parallelization
 plan(sequential)
 
 # 5. Stitch together the results
-
 rscript("V2/scripts/5-harmonize.r")
 
 # 6. Suitability analysis
-
 rscript("V2/scripts/6-suitability_analysis.r")
+
+# 7. Group rooftops
+rscript("V2/scripts/7-group_rooftops.r")
