@@ -33,8 +33,8 @@ result <- run(
     str_glue("vegetation_dsm={chm_path}"),
     str_glue("meteorological_data_umeped={met_path}"),
     str_glue("outputdir={out_dir}")
-    # str_glue("Rooftopirradiance={irr_path}")
   ),
+  env = c(QT_QPA_PLATFORM = "offscreen")
   echo = FALSE,
   echo_cmd = TRUE,
   spinner = FALSE,

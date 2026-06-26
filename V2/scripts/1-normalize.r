@@ -10,7 +10,7 @@ config <- read_json("config.json")
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
-  pattern = "*.las" # TODO: Convert to copc
+  pattern = "*.copc.laz" # TODO: Convert to copc
 )
 
 st_crs(ctg) <- 26910

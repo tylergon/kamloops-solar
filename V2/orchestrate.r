@@ -7,6 +7,7 @@ library(fs)
 library(stringr)
 library(future)
 library(furrr)
+library(tictoc)
 
 config <- fromJSON("config.json")
 
@@ -19,13 +20,16 @@ config <- fromJSON("config.json")
 # 2. Building Identification
 # rscript("V2/scripts/2-buildings.r")
 
+
 # 3. Orchestrate SEBE operation
+
+tic("Tile Creation")
 
 # Read in LiDAR
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
-  pattern = "*.las" # TODO: Convert to *.copc.las
+  pattern = "*.copc.laz" # TODO: Convert to *.copc.las
 )
 
 # Update catalog config
@@ -38,6 +42,13 @@ retile_dir <- fs::path(config$scratch_dir, "SEBE")
 opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
 newctg <- catalog_retile(ctg)
 
+toc()
+
+tic("SEBE Stuff")
+
+logs_dir <- fs::path(config$scratch_dir, "Logs", "4-sebe_orchestrator")
+dir.create(logs_dir, recursive = TRUE, showWarnings = FALSE)
+
 # Prep parallelization
 plan(multisession, workers = 21)
 
@@ -47,16 +58,21 @@ future_map(tiles, \(tile) {
   tile_no <- basename(tile)
   rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) 
 
+
   rscript(
     "V2/scripts/4-sebe_orchestrator.r",
     cmdargs = c(tile),
-    stdout = fs::path(config$scratch_dir, "Logs", "4-sebe_orchestrator", tile_no, ext = "log"),
+    stdout = fs::path(logs_dir, tile_no, ext = "log"),
     stderr = "2>&1"
   )
 })
 
 # Tear down parallelization
 plan(sequential)
+
+toc()
+
+quit()
 
 # 5. Stitch together the results
 rscript("V2/scripts/5-harmonize.r")
