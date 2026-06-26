@@ -34,7 +34,7 @@ result <- run(
     str_glue("meteorological_data_umeped={met_path}"),
     str_glue("outputdir={out_dir}")
   ),
-  env = c(QT_QPA_PLATFORM = "offscreen")
+  env = c(QT_QPA_PLATFORM = "offscreen"),
   echo = FALSE,
   echo_cmd = TRUE,
   spinner = FALSE,
