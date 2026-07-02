@@ -28,13 +28,15 @@ result <- run(
   args = c(
     "run",
     model,
+    "--verbose",
     "--",
     str_glue("building__ground_dsm={dsm_path}"),
     str_glue("vegetation_dsm={chm_path}"),
     str_glue("meteorological_data_umeped={met_path}"),
     str_glue("outputdir={out_dir}")
   ),
-  env = c(QT_QPA_PLATFORM = "offscreen"),
+  env = c(Sys.getenv(), QT_QPA_PLATFORM = "offscreen"),
+  # TODO: Setup env with QT_QPA_PLATFORM, HOME, and PYTHONPATH(?)
   echo = FALSE,
   echo_cmd = TRUE,
   spinner = FALSE,
@@ -44,7 +46,7 @@ result <- run(
 )
 
 cat(result$stdout)
-cat(result$stderr)  # this is where the double free line will be
+cat(result$stderr)
 
 irr_written <- file.exists(file.path(out_dir, "Energyyearroof.tif")) &&
                file.info(file.path(out_dir, "Energyyearroof.tif"))$size > 10000
@@ -52,5 +54,5 @@ irr_written <- file.exists(file.path(out_dir, "Energyyearroof.tif")) &&
 if (!irr_written) {
   message("\n\n>>> SEBE::FAIL\n\n",  result$stderr)
 } else {
-  message("\n\n>>> SEBE::SUCCESS\n\n")
+  message("\n\n>>> SEBE::SUCCESS ~ {wd}\n\n")
 }

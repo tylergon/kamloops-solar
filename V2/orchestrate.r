@@ -23,7 +23,7 @@ config <- fromJSON("config.json")
 
 # 3. Orchestrate SEBE operation
 
-tic("Tile Creation")
+# tic("Tile Creation")
 
 # Read in LiDAR
 ctg <- readLAScatalog(
@@ -39,10 +39,10 @@ opt_chunk_buffer(ctg) <- config$chunk_buffer
 
 # Retile and create a subdirectory pattern to loop SEBE through
 retile_dir <- fs::path(config$scratch_dir, "SEBE")
-opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
-newctg <- catalog_retile(ctg)
+# opt_output_files(ctg) <- paste0(retile_dir, "/{ID}/retile_{ID}")
+# newctg <- catalog_retile(ctg)
 
-toc()
+# toc()
 
 tic("SEBE Stuff")
 
@@ -50,20 +50,20 @@ logs_dir <- fs::path(config$scratch_dir, "Logs", "4-sebe_orchestrator")
 dir.create(logs_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Prep parallelization
-plan(multisession, workers = 21)
+plan(multisession, workers = 16)
 
 # Loop through the subdirectories creating SEBE inputs
 tiles <- list.files(retile_dir, full.name = TRUE)
 future_map(tiles, \(tile) {
   tile_no <- basename(tile)
-  rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) 
+  # rscript("V2/scripts/3-sebe_input.r", cmdargs = c(tile)) 
 
 
   rscript(
     "V2/scripts/4-sebe_orchestrator.r",
-    cmdargs = c(tile),
-    stdout = fs::path(logs_dir, tile_no, ext = "log"),
-    stderr = "2>&1"
+    cmdargs = c(tile)#,
+    #stdout = fs::path(logs_dir, tile_no, ext = "log"),
+    #stderr = "2>&1"
   )
 })
 
