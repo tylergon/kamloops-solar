@@ -1,34 +1,26 @@
-# Question... Is this performant at cityscale?
-
 library(jsonlite)
 library(fs)
 library(terra)
 
+# Configuration
 config <- fromJSON("config.json")
 
-# Utility function to combine our SEBE inputs/outputs into citywide rasters
+# Util Function
+# Combine our SEBE inputs/outputs into citywide rasters
 harmonize_dataset <- function (file_name) {
+    sebe_dir <- fs::path(config$scratch_dir, "SEBE")
 
     # Read in the dataset
-    prefix <- fs::path(config$scratch_dir, "SEBE")
-    path_list <- list.files(path = prefix, 
-                            pattern = file_name, 
+    path_list <- list.files(path = sebe_dir, 
+                            pattern = stringr::str_glue("{file_name}$"), 
                             recursive = TRUE)
-    path_list <- fs::path(prefix, path_list)
-    rast_list<- lapply(path_list, rast)
-
-    for (i in path_list) {
-        print(stringr::str_glue("\nPath: {i}"))
-        print(stringr::str_glue("Res: {res(rast(i))}"))
-    }
-
-    # TODO: Handle buffer pixels. Use VRTs?
+    path_list <- fs::path(sebe_dir, path_list)
+    rast_list <- lapply(path_list, rast)
 
     # Merge files
     src <- sprc(rast_list)
     mosaic(src, fun = "mean")
 }
-
 
 # Merge building & ground DSM
 message(">>> Merging DSM")

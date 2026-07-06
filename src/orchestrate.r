@@ -50,7 +50,7 @@ logs_dir <- fs::path(config$scratch_dir, "Logs", "4-sebe_orchestrator")
 dir.create(logs_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Prep parallelization
-plan(multisession, workers = 16)
+plan(multisession, workers = 8)
 
 # Loop through the subdirectories creating SEBE inputs
 tiles <- list.files(retile_dir, full.name = TRUE)

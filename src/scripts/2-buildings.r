@@ -25,7 +25,7 @@ opt_filter(ctg_norm) <- "-keep_class 6 -drop_z_below 2.5"
 rooftops <- rasterize_canopy(
   ctg_norm,
   config$spatial_resolution,
-  algorithm = p2r(0.2) # Doesn't fill gaps between houses
+  algorithm = p2r(0.2)
 )
 
 # Perform a 2-step buffer to remove thin channels of pixels
@@ -35,4 +35,3 @@ is_bldg_buff <- focal(is_bldg_shrunk, w = 3, fun = "max")
 
 # Write output
 writeRaster(is_bldg_buff, fs::path(config$output_dir, "buildings.tif"), overwrite = T)
-
