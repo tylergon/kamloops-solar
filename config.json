@@ -11,5 +11,6 @@
     "scratch_dir": "/home/tygon804/Data/Scratch",
     "SEBE": {
         "albedo": 0.15
-    }
+    },
+    "workers": 8
 }

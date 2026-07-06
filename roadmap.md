@@ -3,13 +3,16 @@
 ## The Docket
 
 1. Polish
-    - [ ] Convert aspect to sin / cos
-        - https://setosa.io/ev/sine-and-cosine/
+
+    - [ ] Extract generalizable logic into utils.r -> source("src/utils.r")
     - [ ] Stitching logic
     - [ ] Chunking alignment
     - [ ] Merging tiles
     - [ ] Consistent logging
     - [ ] Rooftop segmentation improvements
+        - [x] Convert aspect to normalized vectors
+            - https://setosa.io/ev/sine-and-cosine/
+            - https://cartographicperspectives.org/index.php/journal/article/view/1669/1947
         - [ ] Parallel execution
         - [ ] Include proximity?
         - [ ] Better understanding of edge cases

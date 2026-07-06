@@ -13,27 +13,18 @@ wd <- args[1]
 ##### Prepare Inputs #####
 
 # Read in building / ground DSM
-bldg_grnd_dsm <- rast(fs::path(wd, 'dsm.tif'))
+bldg_grnd_dsm <- rast(fs::path(config$output_dir, 'buildings_and_ground.tif'))
 
-# Calculate & bin slopes
-slope_raw <- terrain(bldg_grnd_dsm, v="slope", neighbors=8, unit="degrees")
-slope_bins <- matrix(c(00, 10, 1,
-                       10, 35, 2,
-                       35, 45, 3,
-                       45, 60, 4,
-                       60, 99, 5), ncol=3, byrow = TRUE)
-slope <- classify(slope_raw, rcl = slope_bins, include.lowest = TRUE, right = TRUE)
+# Calculate slope & aspect
+slope <- terrain(bldg_grnd_dsm, v="slope", neighbors=8, unit="radians")
+aspect <- terrain(bldg_grnd_dsm, v = "aspect", neighbors = 8, unit="radians")
 
-# Calculate aspect & convert to radians
-aspect_raw <- terrain(bldg_grnd_dsm, v = "aspect", neighbors = 8, unit="degrees")
-aspect_bins <- matrix(c(
-    0, 45, 1, #N
-    45, 135, 2, #E
-    135, 225, 3, #S
-    225, 315, 4, #W
-    315, 360, 1 #N
-), ncol=3, byrow = TRUE)
-aspect <- classify(aspect_raw, rcl = aspect_bins, include.lowest = TRUE, right = TRUE)
+# Calculate each pixel's normal vector
+nx <- sin(aspect) * sin(slope)
+ny <- cos(aspect) * sin(slope)
+nz <- cos(slope)
+n <- c(nx, ny, nz)
+names(n) <- c("nx", "ny", "nz")
 
 # Pull in building data and convert to polygons
 bldg_rast <- rast(fs::path(config$output_dir, 'buildings.tif'))
@@ -45,18 +36,17 @@ bldg_poly <- as.polygons(bldg_rast) |>
 ##### Perform segmentation
 
 # Setup output
-collection <- sprc()
+segments <- sprc()
 
 # Loop through each identified building
 for (i in seq_len(nrow(bldg_poly))) {
     bldg <- bldg_poly[i,]
 
     # Crop out the buildings features
-    bldg_slope <- crop(slope, bldg, mask = TRUE)
-    bldg_aspect <- crop(aspect, bldg, mask = TRUE)
+    bldg_n <- crop(n, bldg, mask = TRUE)
 
     # Generate a data frame encoding our variables for DBSCAN
-    features <- as.data.frame(c(bldg_slope, bldg_aspect), xy = TRUE) |>
+    features <- as.data.frame(bldg_n, xy = TRUE) |>
         na.omit()
 
     # Handle edge cases
@@ -67,17 +57,20 @@ for (i in seq_len(nrow(bldg_poly))) {
     }
 
     # Perform scan
-    db <- dbscan(features[, c("slope", "aspect")], eps = 0.5, minPts = 5)
+    db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.5, minPts = 5)
 
     # Assign our features their cluster number and rebuild a raster
     features$cluster <- db$cluster
-    add(collection) <- rast(
+    add(segments) <- rast(
         features[, c("x", "y", "cluster")],
-        crs = crs(bldg_slope),
-        extent = ext(bldg_slope),
+        crs = crs(bldg_n),
+        extent = ext(bldg_n)
     )
 }
 
+
+res <- mosaic(segments)
+
 # Write out our collection
-res <- mosaic(collection, fun = "mean")
 writeRaster(res, fs::path(config$output_dir, "segments.tif"), overwrite = TRUE)
+writeRaster(n, fs::path(config$output_dir, "normal.tif"), overwrite = TRUE)
