@@ -13,7 +13,7 @@
         - [x] Convert aspect to normalized vectors
             - https://setosa.io/ev/sine-and-cosine/
             - https://cartographicperspectives.org/index.php/journal/article/view/1669/1947
-        - [ ] Parallel execution
+        - [x] Parallel execution
         - [ ] Include proximity?
         - [ ] Better understanding of edge cases
             1. No features are in the area
@@ -33,3 +33,7 @@
     - [ ] Bins for DBSCAN and suitability analysis
 - [ ] Explore alternatives to moving window. TIN interpolation?
 - [ ] Cleaner method of aligning SEBE input raster extents?
+
+## Discussion Topics for Greg
+
+- Parallelizing DBSCAN. How do we feel about the current method.
