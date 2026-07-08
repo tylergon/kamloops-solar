@@ -11,9 +11,6 @@ library(dplyr)
 
 config <- fromJSON("config.json")
 
-args <- commandArgs(trailingOnly = TRUE)
-wd <- args[1]
-
 ##### Prepare Inputs #####
 
 # Read in building / ground DSM
@@ -71,6 +68,8 @@ result <- future_map(chunks, \(chunk) {
         if (nrow(features) == 0 || length(unique(features$x)) < 2 || length(unique(features$y)) < 2) {
             return(NULL)
         }
+
+        print(features)
 
         # Perform clustering
         db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.5, minPts = 6)

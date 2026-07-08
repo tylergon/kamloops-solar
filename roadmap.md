@@ -14,6 +14,7 @@
             - https://setosa.io/ev/sine-and-cosine/
             - https://cartographicperspectives.org/index.php/journal/article/view/1669/1947
         - [x] Parallel execution
+        - [ ] Better segmentation!
         - [ ] Include proximity?
         - [ ] Better understanding of edge cases
             1. No features are in the area
