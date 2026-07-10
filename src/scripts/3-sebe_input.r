@@ -1,16 +1,18 @@
-library(stringr)
-library(jsonlite)
-library(lidR)
 library(sf)
 library(terra)
+library(lidR)
 
-config <- read_json("config.json")
-
-# ARG1: Working directory
 args <- commandArgs(trailingOnly = TRUE)
 wd <- args[1]
 
+source("src/utils.r")
+init_logging("sebe_inputs - {wd}")
+
+
 ##### 1. Building & Ground DSM #####
+
+
+log_info("Generating DSM")
 
 # Read & configure point cloud
 ctg <- readLAScatalog(wd)
@@ -30,6 +32,7 @@ dsm <- rasterize_canopy(
 # Fill in NA values
 w <- 1
 while (global(dsm, function(x) any(is.na(x)))[, 1]) {
+  log_verbose("Filling gaps (", w, ")")
   w <- w + 2
   dsm <- focal(
     dsm,
@@ -40,10 +43,14 @@ while (global(dsm, function(x) any(is.na(x)))[, 1]) {
   )
 }
 
+
 ##### 2. Canopy Height Model #####
 
+
+log_info("Generating CHM")
+
 # Load normalized point cloud for AOI
-norm_path <- paste0(config$scratch_dir, "/normalized/")
+norm_path <- fs::path(config$scratch_dir, "normalized")
 norm_las <- readLAScatalog(norm_path) |> clip_roi(st_bbox(ctg))
 
 # Filter down to vegetation classes (above 1m)
@@ -59,7 +66,10 @@ chm <- rasterize_canopy(
 # Replace NA pixels w/ 0 -- required for SEBE
 chm[is.na(chm)] <- 0
 
+
 ##### 3. Write out #####
+
+log_info("Writing results")
 
 # Align output extents
 ext_out <- intersect(ext(dsm), ext(chm))
@@ -69,3 +79,5 @@ chm <- crop(chm, ext_out)
 # Write results
 writeRaster(dsm, fs::path(wd, "dsm.tif"), overwrite = TRUE)
 writeRaster(chm, fs::path(wd, "chm.tif"), overwrite = TRUE)
+
+log_success("Complete")

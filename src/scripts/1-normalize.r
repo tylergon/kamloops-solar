@@ -1,10 +1,9 @@
-library(stringr)
-library(jsonlite)
-library(lidR)
 library(sf)
 library(terra)
+library(lidR)
 
-config <- read_json("config.json")
+source("src/utils.r")
+init_logging("normalization")
 
 # Create a catalogue for our point cloud data
 ctg <- readLAScatalog(
@@ -19,6 +18,8 @@ st_crs(ctg) <- 26910
 opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
 
+log_info("Generating DEM")
+
 # Generate a DEM of the study area
 dem <- rasterize_terrain(
   ctg,
@@ -26,13 +27,19 @@ dem <- rasterize_terrain(
   tin()
 )
 
-# Save the DEM - is this necessary / should it be chunked?
-dem_path <- paste(config$output_dir, "dem.tif", sep = "/")
+log_info("Writing DEM")
+
+# Save the DEM
+dem_path <- fs::path(config$output_dir, "dem.tif")
 writeRaster(dem, dem_path, overwrite = TRUE)
 
 # Set up the output for the normalized point clouds
-opt_output_files(ctg) <- paste0(config$scratch_dir, "/normalized/norm_{ID}")
+opt_output_files(ctg) <- fs::path(config$scratch_dir, "normalized/norm_{ID}")
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
+
+log_info("Normalizing point cloud")
 
 # Normalize the point cloud
 normalize_height(ctg, dem)
+
+log_info("Complete")

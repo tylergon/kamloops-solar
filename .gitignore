@@ -72,3 +72,5 @@ run.log
 
 # LAS stuff
 .las
+
+*.log

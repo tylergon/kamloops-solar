@@ -4,21 +4,21 @@
 
 1. Polish
 
-    - [ ] Rooftop segmentation improvements
+    - [x] Rooftop segmentation improvements
         - [x] Convert aspect to normalized vectors
             - https://setosa.io/ev/sine-and-cosine/
             - https://cartographicperspectives.org/index.php/journal/article/view/1669/1947
         - [x] Parallel execution
-        - [ ] Better segmentation! (i.e. tune hyperparameters)
+        - [x] Better segmentation! (i.e. tune hyperparameters)
         - [ ] Better understanding of edge cases
             1. No features are in the area
             2. Single column / row. Can we 
-        - [ ] Output as polygons
-    - [ ] Extract generalizable logic into utils.r -> source("src/utils.r")
-    - [ ] Consistent logging
-    - [ ] Stitching logic
-    - [ ] Chunking alignment
-    - [ ] Merging tiles
+        - [x] Output as polygons
+    
+    - [ ] Logging: We need consistent logging throughout the project to keep track of the runtime as we go through ALL of Kamloops.
+
+    - [ ] Chunking: Tiles need to be consistently chunked & it needs to be possible to remove the buffer to enable non-average based stitching.
+
     - [ ] Use segments in locating suitable areas
 
 ## Additional Features
@@ -29,6 +29,8 @@
 - [ ] ! Play with `2-buildings.r` hyperparameters
 - [ ] ! Cleaner method of aligning SEBE input raster extents?
 - [ ] ! Explore alternatives to moving window. TIN interpolation?
+- [ ] Can loaded libraries be shared b/w orchestrate.r & children?
+- [ ] Extract generalizable logic into utils.r -> source("src/utils.r")
 
 ## Discussion Topics for Greg
 

@@ -1,16 +1,18 @@
-library(stringr)
-library(jsonlite)
-library(lidR)
 library(sf)
+library(fs)
+library(lidR)
 library(terra)
 
-config <- fromJSON("config.json")
+source("src/utils.r")
+init_logging("suitability_analysis")
 
 # Inputs
 bldgs <- rast(fs::path(config$output_dir, "buildings.tif"))
 bldg_grnd_dsm <- rast(fs::path(config$output_dir, "buildings_and_ground.tif"))
 insolation <- rast(fs::path(config$output_dir, "insolation.tif"))
 slope <- rast(fs::path(config$output_dir, "slope.tif"))
+
+log_info("Binning slopes")
 
 # Bin slopes
 slope_bins <- matrix(c(
@@ -19,6 +21,8 @@ slope_bins <- matrix(c(
     60, 90, 3 # Too steep
 ), ncol = 3, byrow = TRUE)
 slope_cl <- classify(slope, rcl = slope_bins, include.lowest = TRUE, right = TRUE)
+
+log_info("Binning aspects")
 
 # Bin aspects
 aspect_bins <- matrix(c(
@@ -36,6 +40,8 @@ bldgs_crop <- crop(bldgs, insolation, extend = TRUE)
 slope_crop <- crop(slope_cl, insolation, extend = TRUE)
 aspect_crop <- crop(aspect, insolation, extend = TRUE)
 
+log_info("Defining masks")
+
 # Identify locations unsuitable due to slope
 slope_mask <- slope_crop != 3
 writeRaster(slope_mask, fs::path(config$scratch_dir, "slope_mask.tif"), overwrite=T)
@@ -43,6 +49,8 @@ writeRaster(slope_mask, fs::path(config$scratch_dir, "slope_mask.tif"), overwrit
 # Identify locations unsuitable due to aspect
 aspect_mask <- aspect_crop > 45 & aspect_crop < 315
 writeRaster(aspect_mask, fs::path(config$scratch_dir, "aspect_mask.tif"), overwrite=T)
+
+log_info("Applying suitability criteria")
 
 # Apply suitability criteria
 suitable_insolation <- insolation |> 
@@ -55,3 +63,4 @@ suitable_insolation <- insolation |>
 out_path <- fs::path(config$output_dir, "suitable_insolation.tif")
 writeRaster(suitable_insolation, out_path, overwrite = TRUE)
   
+log_success()

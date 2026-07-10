@@ -8,8 +8,17 @@ library(stringr)
 library(future)
 library(furrr)
 library(tictoc)
+library(logger)
 
-config <- fromJSON("config.json")
+
+source("src/utils.r")
+init_logging("orchestrate.r")
+
+# Record session
+log_info(sessionInfo())
+
+
+
 
 # TODO: UMEP the input TMY here
 # TODO: Record tile boundaries during Retile to smooth reconstruction

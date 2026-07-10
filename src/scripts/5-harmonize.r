@@ -1,20 +1,19 @@
-library(jsonlite)
-library(fs)
 library(terra)
+library(stringr)
+library(fs)
 
-# Configuration
-config <- fromJSON("config.json")
+source("src/utils.r")
 
 # Util Function
 # Combine our SEBE inputs/outputs into citywide rasters
 harmonize_dataset <- function (file_name) {
-    sebe_dir <- fs::path(config$scratch_dir, "SEBE")
+    sebe_dir <- path(config$scratch_dir, "SEBE")
 
     # Read in the dataset
     path_list <- list.files(path = sebe_dir, 
-                            pattern = stringr::str_glue("{file_name}$"), 
+                            pattern = str_glue("{file_name}$"), 
                             recursive = TRUE)
-    path_list <- fs::path(sebe_dir, path_list)
+    path_list <- path(sebe_dir, path_list)
     rast_list <- lapply(path_list, rast)
 
     # Merge files
@@ -23,26 +22,28 @@ harmonize_dataset <- function (file_name) {
 }
 
 # Merge building & ground DSM
-message(">>> Merging DSM")
+log_info("Merging DSM")
 bldg_grnd_dsm <- harmonize_dataset('dsm.tif')
-writeRaster(bldg_grnd_dsm, fs::path(config$output_dir, "buildings_and_ground.tif"), overwrite = TRUE)
+writeRaster(bldg_grnd_dsm, path(config$output_dir, "buildings_and_ground.tif"), overwrite = TRUE)
 
 # Merge rooftop insolation output
-message(">>> Merging Insolation")
+log_info("Merging insolation")
 insolation <- harmonize_dataset('Energyyearroof.tif')
-writeRaster(insolation, fs::path(config$output_dir, "insolation.tif"), overwrite = TRUE)
+writeRaster(insolation, path(config$output_dir, "insolation.tif"), overwrite = TRUE)
 
 # Merge CHM results
-message(">>> Merging CHM")
+log_info("Merging CHM")
 chm <- harmonize_dataset('chm.tif')
-writeRaster(chm, fs::path(config$output_dir, "chm.tif"), overwrite = TRUE)
+writeRaster(chm, path(config$output_dir, "chm.tif"), overwrite = TRUE)
 
 # Slope
-message(">>> Calculating slope")
+log_info("Calculating slope")
 slope <- terrain(bldg_grnd_dsm, v="slope", neighbors=8, unit="degrees")
-writeRaster(slope, fs::path(config$output_dir, "slope.tif"), overwrite = TRUE)
+writeRaster(slope, path(config$output_dir, "slope.tif"), overwrite = TRUE)
 
 # Aspect
-message(">>> Calculating aspect")
+log_info("Merging aspect")
 aspect <- terrain(bldg_grnd_dsm, v = "aspect", neighbors = 8, unit="degrees")
-writeRaster(aspect, fs::path(config$output_dir, "aspect.tif"), overwrite = TRUE)
+writeRaster(aspect, path(config$output_dir, "aspect.tif"), overwrite = TRUE)
+
+log_success()
