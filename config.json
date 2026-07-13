@@ -12,6 +12,6 @@
     "SEBE": {
         "albedo": 0.15
     },
-    "workers": 8,
+    "workers": 16,
     "log_path": "status.log"
 }

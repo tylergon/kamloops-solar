@@ -15,11 +15,12 @@
             2. Single column / row. Can we 
         - [x] Output as polygons
     
-    - [ ] Logging: We need consistent logging throughout the project to keep track of the runtime as we go through ALL of Kamloops.
+    - [x] Logging: We need consistent logging throughout the project to keep track of the runtime as we go through ALL of Kamloops.
 
     - [ ] Chunking: Tiles need to be consistently chunked & it needs to be possible to remove the buffer to enable non-average based stitching.
 
     - [ ] Use segments in locating suitable areas
+    - [ ] Move window filling algorithm into SEBE -> It's not necessary elsewhere. Same w/ CHM
 
 ## Additional Features
 
@@ -31,6 +32,7 @@
 - [ ] ! Explore alternatives to moving window. TIN interpolation?
 - [ ] Can loaded libraries be shared b/w orchestrate.r & children?
 - [ ] Extract generalizable logic into utils.r -> source("src/utils.r")
+- [ ] Could smoothing help?
 
 ## Discussion Topics for Greg
 

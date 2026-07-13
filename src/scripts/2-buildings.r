@@ -1,13 +1,14 @@
 library(lidR)
 library(sf)
 library(terra)
+library(fs)
 
 source("src/utils.r")
 init_logging("building_identification")
 
 
 # Read in the normalized point cloud
-norm_path <- fs::path(config$scratch_dir, "normalized")
+norm_path <- path(config$scratch_dir, "normalized")
 ctg_norm <- readLAScatalog(norm_path)
 
 # Grid up the data
