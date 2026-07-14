@@ -4,7 +4,6 @@ library(fs)
 
 source("src/utils.r")
 
-# Merge rooftop insolation output
 log_info("Merging insolation")
 
 # Read in the dataset
@@ -17,8 +16,8 @@ rast_list <- lapply(path_list, rast)
 
 # Merge files
 src <- sprc(rast_list)
-mosaic(src, fun = "mean")
+irr <- mosaic(src, fun = "mean")
 
-writeRaster(insolation, path(config$output_dir, "irr.tif"), overwrite = TRUE)
+writeRaster(irr, path(config$output_dir, "irr.tif"), overwrite = TRUE)
 
-log_success(Merge complete)
+log_success("Merge complete")
