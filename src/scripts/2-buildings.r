@@ -39,6 +39,6 @@ is_bldg_buff <- focal(is_bldg_shrunk, w = 3, fun = "max")
 
 log_info("Write out")
 
-writeRaster(is_bldg_buff, fs::path(config$output_dir, "buildings.tif"), overwrite = T)
+writeRaster(is_bldg_buff, path(config$output_dir, "buildings.tif"), overwrite = T)
 
 log_info("Complete")

@@ -8,7 +8,7 @@ library(tibble)
 
 config <- jsonlite::fromJSON("config.json")
 
-minPts <- 10
+minPts <- 6
 
 # Pull in building data and convert to polygons
 bldg_rast <- rast(fs::path(config$output_dir, 'buildings.tif'))
