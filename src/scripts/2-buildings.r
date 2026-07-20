@@ -4,7 +4,7 @@ library(terra)
 library(fs)
 
 source("src/utils.r")
-init_logging("building_identification")
+init_logging("2-building_identification")
 
 
 # Read in the normalized point cloud

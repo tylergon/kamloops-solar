@@ -73,5 +73,6 @@ run.log
 # LAS stuff
 .las
 
+/log
 *.log
 terrain.tif

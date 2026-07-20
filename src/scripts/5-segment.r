@@ -9,7 +9,7 @@ library(dplyr)
 
 
 source("src/utils.r")
-init_logging("segmentation")
+init_logging("5-segmentation")
 
 # Inputs
 buildings_path <- path(config$output_dir, "buildings.tif")

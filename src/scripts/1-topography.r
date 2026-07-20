@@ -6,6 +6,7 @@ library(future)
 library(future.apply)
 
 source("src/utils.r")
+init_logging("1-topography")
 
 plan(multisession, workers = config$workers)
 

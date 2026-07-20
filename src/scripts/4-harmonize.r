@@ -3,7 +3,7 @@ library(stringr)
 library(fs)
 
 source("src/utils.r")
-init_logging("harmonizing")
+init_logging("4-harmonizing")
 
 log_info("Merging insolation")
 

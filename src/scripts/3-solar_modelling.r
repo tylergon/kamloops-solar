@@ -8,7 +8,7 @@ args <- commandArgs(trailingOnly = TRUE)
 wd <- args[1]
 
 source("src/utils.r")
-init_logging("sebe_orchestrator - {wd}")
+init_logging("3-sebe_orchestrator-{wd}")
 
 ##### Prepare Inputs #####
 

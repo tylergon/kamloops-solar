@@ -4,7 +4,7 @@ library(lidR)
 library(terra)
 
 source("src/utils.r")
-init_logging("suitability_analysis")
+init_logging("6-suitability_analysis")
 
 # Inputs
 bldgs <- rast(fs::path(config$output_dir, "buildings.tif"))

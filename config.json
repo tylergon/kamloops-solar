@@ -9,9 +9,9 @@
     "input_dir": "/home/tygon804/Data/Input",
     "output_dir": "/home/tygon804/Data/Output",
     "scratch_dir": "/home/tygon804/Data/Scratch",
+    "log_dir": "status.log",
     "SEBE": {
         "albedo": 0.15
     },
-    "workers": 16,
-    "log_path": "status.log"
+    "workers": 32
 }
