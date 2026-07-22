@@ -8,7 +8,7 @@ init_logging("6-suitability_analysis")
 
 # Inputs
 bldgs <- rast(fs::path(config$output_dir, "buildings.tif"))
-bldg_grnd_dsm <- rast(fs::path(config$output_dir, "buildings_and_ground.tif"))
+bldg_grnd_dsm <- rast(fs::path(config$output_dir, "dsm.tif"))
 insolation <- rast(fs::path(config$output_dir, "insolation.tif"))
 slope <- rast(fs::path(config$output_dir, "slope.tif"))
 

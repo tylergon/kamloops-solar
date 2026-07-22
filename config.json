@@ -9,9 +9,9 @@
     "input_dir": "/home/tygon804/Data/Input",
     "output_dir": "/home/tygon804/Data/Output",
     "scratch_dir": "/home/tygon804/Data/Scratch",
-    "log_dir": "status.log",
+    "log_dir": "/home/tygon804/kamloops-solar/logs",
     "SEBE": {
         "albedo": 0.15
     },
-    "workers": 32
+    "workers": 24
 }

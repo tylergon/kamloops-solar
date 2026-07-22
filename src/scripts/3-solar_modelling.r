@@ -8,7 +8,7 @@ args <- commandArgs(trailingOnly = TRUE)
 wd <- args[1]
 
 source("src/utils.r")
-init_logging("3-sebe_orchestrator-{wd}")
+init_logging(basename(wd), "3-solar_modelling")
 
 ##### Prepare Inputs #####
 
@@ -23,8 +23,9 @@ bbox <- ext(c(
   ymax = matches$ybottom + config$chunk_size + config$chunk_buffer
 ))
 
+log_info("Cutting out DSM")
+
 # Cut out DSM
-dsm_path <- path(wd, str_glue("dsm_{matches$xleft}_{matches$ybottom}.tif"))
 dsm <- rast(path(config$output_dir, "dsm.tif")) |>
   crop(bbox)
 
@@ -42,13 +43,16 @@ while (global(dsm, function(x) any(is.na(x)))[, 1]) {
   )
 }
 
+dsm_path <- path(wd, str_glue("dsm_{matches$xleft}_{matches$ybottom}.tif"))
 writeRaster(dsm, dsm_path, overwrite = TRUE)
 
+log_info("Cutting out CHM")
+
 # Cut out CHM & fill empty pixels
-chm_path <- path(wd, str_glue("chm_{matches$xleft}_{matches$ybottom}.tif"))
 chm <- rast(path(config$output_dir, "chm.tif")) |>
   crop(bbox)
 chm[is.na(chm)] <- 0
+chm_path <- path(wd, str_glue("chm_{matches$xleft}_{matches$ybottom}.tif"))
 writeRaster(chm, chm_path, overwrite = TRUE)
 
 # Clean up

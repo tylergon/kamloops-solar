@@ -7,9 +7,10 @@ library(fs)
 library(stringr)
 library(future)
 library(furrr)
+library(purrr)
 library(tictoc)
 library(logger)
-
+library(dplyr)
 
 source("src/utils.r")
 init_logging("orchestrate.r")
@@ -17,30 +18,19 @@ init_logging("orchestrate.r")
 # Record session
 # log_info(sessionInfo())
 
-# 1. Generate topographic datasets
-tic("Topography")
-rscript("src/scripts/1-topography.r")
+# # Generate topographic datasets
+# rscript("src/scripts/1-topography.r")
 
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
+# # Building Identification
+# rscript("src/scripts/2-buildings.r")
 
-
-# 2. Building Identification
-tic("Buildings")
-rscript("src/scripts/2-buildings.r")
-
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
-
-# 3. Orchestrate SEBE operation
+# Orchestrate solar radiation modelling
 
 # Read in LiDAR
 ctg <- readLAScatalog(
   config$input_dir,
   recursive = TRUE,
-  pattern = "*.copc.laz" # TODO: Convert to *.copc.las
+  pattern = "*.copc.laz"
 )
 
 # Update catalog config
@@ -49,65 +39,53 @@ opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
 opt_laz_compression(ctg) <- TRUE
 
-# Retile and create a subdirectory pattern to loop SEBE through
+# Retile LiDAR for solar modelling
 retile_dir <- path(config$scratch_dir, "SEBE")
-opt_output_files(ctg) <- paste0(retile_dir, "/{XLEFT}_{XRIGHT}_{YBOTTOM}_{YTOP}/tile")
-newctg <- catalog_retile(ctg)
+opt_output_files(ctg) <- path(retile_dir, "{XLEFT}_{YBOTTOM}", "tile")
+# catalog_retile(ctg)
 
-tic("Solar Radiation Modelling")
-
+# Spin up parallelization
 plan(multisession, workers = config$workers)
-
 log_info("Beginning solar radiation modelling")
 
-logs_dir <- path(config$scratch_dir, "Logs", "4-sebe_orchestrator")
-dir.create(logs_dir, recursive = TRUE, showWarnings = FALSE)
-
-# Loop through the subdirectories creating SEBE inputs
+# Loop through tiles
 tiles <- list.files(retile_dir, full.name = TRUE)
-future_map(tiles, \(tile) {
-  tile_no <- basename(tile)
-  rscript(
-    "src/scripts/3-solar_modelling.r",
-    cmdargs = c(tile)#,
-    #stdout = fs::path(logs_dir, tile_no, ext = "log"),
-    #stderr = "2>&1"
+results <- future_map(tiles, \(tile) {
+  init_logging(basename(tile), "3-solar_modelling")
+
+  # Attempt to perform solar modelling
+  is_success <- FALSE
+  tryCatch(
+    {
+      log_info("ORCHESTRATION - Initializing")
+      rscript("src/scripts/3-solar_modelling.r", cmdargs = c(tile), fail_on_status = TRUE)
+      log_success("ORCHESTRATION - Complete")
+      is_success <- TRUE
+    },
+    error = \(e) {
+      log_error(skip_formatter(paste0("Condition: ", conditionMessage(e))))
+      log_error(skip_formatter(paste0("stdout: ", e$stdout)))
+      log_error(skip_formatter(paste0("stderr: ", e$stderr)))
+    }
   )
-})
+
+  tibble(tile = basename(tile), is_success)
+}) |> list_rbind()
 
 plan(sequential)
 
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
+results[results$is_success,] |> pwalk(\(tile, is_success) log_success("[{tile}] Solar modelling complete"))
+results[!results$is_success,] |> pwalk(\(tile, is_success) log_error("[{tile}] Solar modelling failed"))
 
 # 5. Stitch together the results
-tic("Hamronize")
-
 rscript("src/scripts/4-harmonize.r")
 
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
-
-
-tic("Segmentation")
-
+# 5. Segment individual rooftops
+# TODO: Move to be adjacent to rooftop identification
 rscript("src/scripts/5-segment.r")
 
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
-
-
 # 6. Suitability analysis
-tic("Suitability")
-
 rscript("src/scripts/6-suitability_analysis.r")
-
-toc(log = TRUE)
-log_info(tic.log())
-tic.clearlog()
 
 # 7. Group rooftops
 # rscript("src/scripts/7-group_rooftops.r")

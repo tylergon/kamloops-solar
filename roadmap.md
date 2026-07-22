@@ -21,6 +21,7 @@
 
     - [ ] Use segments in locating suitable areas
     - [x] Move window filling algorithm into SEBE -> It's not necessary elsewhere. Same w/ CHM
+    - [ ] Move all input / output definitions to the top of files
 
 ## Additional Features
 

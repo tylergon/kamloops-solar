@@ -21,88 +21,90 @@ ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 ##### DEM #####
 
 
-# log_info("DEM: Generating")
+log_info("DEM: Generating")
 
-# # Configure temporary storage
+# Configure temporary storage
 dem_ctg <- ctg
-# opt_output_files(dem_ctg) <- path(config$scratch_dir, "dem/dem_{XLEFT}_{YBOTTOM}")
+opt_output_files(dem_ctg) <- path(config$scratch_dir, "dem/dem_{XLEFT}_{YBOTTOM}")
 
-# # Generate DEM
-# dem <- rasterize_terrain(dem_ctg, config$spatial_resolution, tin())
+# Generate DEM
+dem <- rasterize_terrain(dem_ctg, config$spatial_resolution, tin())
 
-# log_info("DEM: Writing")
+log_info("DEM: Writing")
 
-# dem_path <- path(config$output_dir, "dem.tif")
-# writeRaster(dem, dem_path, overwrite = TRUE)
+dem_path <- path(config$output_dir, "dem.tif")
+writeRaster(dem, dem_path, overwrite = TRUE)
 
-# log_success("DEM: Complete")
+log_success("DEM: Complete")
 
-# rm(dem_ctg, dem, dem_path); gc()
+rm(dem_ctg, dem_path); gc()
 
 
 # ##### Normalized Catalogue #####
 
 
-# log_info("nLAS: Generating")
+log_info("nLAS: Generating")
 
-# # Set up the output for the normalized point clouds
-# opt_output_files(ctg) <- path(config$scratch_dir, "normalized/norm_{ID}")
+# Set up the output for the normalized point clouds
+opt_output_files(ctg) <- path(config$scratch_dir, "normalized/norm_{ID}")
 
-# # Normalize the point cloud
-# norm_ctg <- normalize_height(ctg, dem)
+# Normalize the point cloud
+norm_ctg <- normalize_height(ctg, dem)
 
-# log_success("nLAS: Complete")
+log_success("nLAS: Complete")
+
+rm(dem); gc()
 
 
 ##### CHM #####
 
 
-# log_info("CHM: Generating")
+log_info("CHM: Generating")
 
-# # Configure temporary storage
-# chm_ctg <- norm_ctg
-# opt_output_files(chm_ctg) <- path(config$scratch_dir, "chm/chm_{XLEFT}_{YBOTTOM}")
+# Configure temporary storage
+chm_ctg <- norm_ctg
+opt_output_files(chm_ctg) <- path(config$scratch_dir, "chm/chm_{XLEFT}_{YBOTTOM}")
 
-# # Filter down to vegetation classes (above 1m)
-# opt_filter(norm_ctg) <- "-keep_class 3 5 -drop_z_below 1"
+# Filter down to vegetation classes (above 1m)
+opt_filter(chm_ctg) <- "-keep_class 3 5 -drop_z_below 1"
 
-# # Generate CHM
-# chm <- rasterize_canopy(
-#   norm_ctg,
-#   res = config$spatial_resolution,
-#   algorithm = p2r(0.2)
-# )
+# Generate CHM
+chm <- rasterize_canopy(
+  chm_ctg,
+  res = config$spatial_resolution,
+  algorithm = p2r(0.2)
+)
 
-# # Write out
-# chm_path <- path(config$output_dir, "chm.tif")
-# writeRaster(chm, chm_path, overwrite = TRUE)
+# Write out
+chm_path <- path(config$output_dir, "chm.tif")
+writeRaster(chm, chm_path, overwrite = TRUE)
 
-# log_success("CHM: Complete")
+log_success("CHM: Complete")
 
-# rm(chm_ctg, norm_ctg, chm, chm_path); gc()
+rm(chm_ctg, norm_ctg, chm, chm_path); gc()
 
 
 ##### B&G DSM #####
 
 
-# log_info("DSM: Generating")
-# dsm_ctg <- ctg
-# opt_output_files(dsm_ctg) <- path(config$scratch_dir, "dsm/dsm_{XLEFT}_{YBOTTOM}")
+log_info("DSM: Generating")
+dsm_ctg <- ctg
+opt_output_files(dsm_ctg) <- path(config$scratch_dir, "dsm/dsm_{XLEFT}_{YBOTTOM}")
 
-# # Filter down to buildings/ground
-# opt_filter(dsm_ctg) <- "-keep_class 2 6"
+# Filter down to buildings/ground
+opt_filter(dsm_ctg) <- "-keep_class 2 6"
 
-# # Generate a DSM using the filtered point cloud
-# dsm <- rasterize_canopy(
-#   dsm_ctg, config$spatial_resolution,
-#   algorithm = p2r(0.2, na.fill = tin())
-# )
+# Generate a DSM using the filtered point cloud
+dsm <- rasterize_canopy(
+  dsm_ctg, config$spatial_resolution,
+  algorithm = p2r(0.2, na.fill = tin())
+)
 
-# log_info("DSM: Generated")
+log_info("DSM: Generated")
 
-# writeRaster(dsm, path(config$output_dir, "dsm.tif"), overwrite = TRUE)
+writeRaster(dsm, path(config$output_dir, "dsm.tif"), overwrite = TRUE)
 
-# log_success("DSM: Complete")
+log_success("DSM: Complete")
 
 
 ##### Slope & Aspect #####
