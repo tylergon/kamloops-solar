@@ -19,10 +19,10 @@ init_logging("orchestrate.r")
 # log_info(sessionInfo())
 
 # # Generate topographic datasets
-# rscript("src/scripts/1-topography.r")
+rscript("src/scripts/1-topography.r")
 
 # # Building Identification
-# rscript("src/scripts/2-buildings.r")
+rscript("src/scripts/2-buildings.r")
 
 # Orchestrate solar radiation modelling
 
@@ -42,7 +42,7 @@ opt_laz_compression(ctg) <- TRUE
 # Retile LiDAR for solar modelling
 retile_dir <- path(config$scratch_dir, "SEBE")
 opt_output_files(ctg) <- path(retile_dir, "{XLEFT}_{YBOTTOM}", "tile")
-# catalog_retile(ctg)
+catalog_retile(ctg)
 
 # Spin up parallelization
 plan(multisession, workers = config$workers)

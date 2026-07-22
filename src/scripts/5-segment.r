@@ -58,7 +58,7 @@ result <- future_map(chunks, \(chunk) {
         }
 
         # Perform clustering
-        db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.1, minPts = 6)
+        db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.05, minPts = 6)
         features$cluster <- db$cluster
 
         # Build raster, wrap, and return
