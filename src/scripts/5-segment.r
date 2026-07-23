@@ -6,6 +6,8 @@ library(future)
 library(furrr)
 library(purrr)
 library(dplyr)
+library(lwgeom)
+library(units)
 
 
 source("src/utils.r")
@@ -58,7 +60,7 @@ result <- future_map(chunks, \(chunk) {
         }
 
         # Perform clustering
-        db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.05, minPts = 6)
+        db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.04, minPts = 6)
         features$cluster <- db$cluster
 
         # Build raster, wrap, and return
@@ -76,10 +78,24 @@ segments_rast <- result |>
     map(\(x) unwrap(x)) |>
     sprc() |>
     mosaic()
-
-# Write out
+segments_rast[segments_rast == 0] <- NA
 writeRaster(segments_rast, segments_rast_path, overwrite = TRUE)
-as.polygons(segments_rast) |>
+
+# Calculate metrics for filtering segments
+segment_metrics <- as.polygons(segments_rast) |>
     st_as_sf() |>
     st_cast("POLYGON") |>
+    mutate(
+        area_m2 = st_area(geometry),
+        perimeter_m = st_perimeter(geometry),
+        para = drop_units(perimeter_m / area_m2)
+    )
+
+st_write(segment_metrics, path(config$scratch_dir, "segment_metrics.gpkg"), delete_dsn=T)
+
+segment_metrics |>
+    filter(
+        area_m2 >= set_units(10, "m^2"),
+        para <= 3
+    ) |>
     st_write(segments_poly_path, delete_dsn = TRUE)
