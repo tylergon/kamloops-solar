@@ -11,8 +11,14 @@ init_logging("1-topography")
 plan(multisession, workers = config$workers)
 
 # Create a catalogue for our point cloud data
-ctg <- readLAScatalog(config$input_dir, recursive = TRUE, pattern = "*.copc.laz")
-st_crs(ctg) <- 26910
+ctg <- readLAScatalog(
+  config$input_dir,
+  recursive = TRUE,
+  pattern = "*.copc.laz"
+)
+
+# Update catalog config
+st_crs(ctg) <- config$crs
 opt_chunk_size(ctg) <- config$chunk_size
 opt_chunk_buffer(ctg) <- config$chunk_buffer
 ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE

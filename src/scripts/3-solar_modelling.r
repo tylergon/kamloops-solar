@@ -66,6 +66,7 @@ rm(dsm, chm); gc()
 met_path <- path(config$input_dir, "metprocessor-output.txt")
 
 # Model
+# TODO: Is this necessary?
 model <- path(config$project_dir, "src/calculate-insolation.model3")
 
 log_info("Running SEBE")

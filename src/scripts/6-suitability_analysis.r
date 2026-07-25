@@ -31,7 +31,7 @@ log_info("Applying suitability criteria")
 
 # Apply suitability criteria
 suitable_insolation <- insolation |> 
-    mask(segment) |> 
+    mask(segments) |> 
     mask(slope_mask, maskvalues = FALSE) |>
     mask(aspect_mask, maskvalues = FALSE) |>
     mask(insolation > 800, maskvalues = FALSE)

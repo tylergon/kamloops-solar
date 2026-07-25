@@ -22,9 +22,11 @@
     - [ ] Use segments in locating suitable areas
     - [x] Move window filling algorithm into SEBE -> It's not necessary elsewhere. Same w/ CHM
     - [ ] Move all input / output definitions to the top of files
+    
 
 ## Additional Features
 
+- [ ] Do I need to stamp out DSM & CHMs or is this duplicating work from lidR done in 1-topography?
 - [ ] !!! Investigate binning logic & POA irradiance
 - [ ] !! Identify rooftops using height above ground + normals clustering
 - [ ] !! Include edge to area metrics

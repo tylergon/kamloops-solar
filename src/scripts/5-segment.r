@@ -95,7 +95,7 @@ st_write(segment_metrics, path(config$scratch_dir, "segment_metrics.gpkg"), dele
 
 segment_metrics |>
     filter(
-        area_m2 >= set_units(10, "m^2"),
+        # area_m2 >= set_units(2, "m^2"),
         para <= 3
     ) |>
     st_write(segments_poly_path, delete_dsn = TRUE)
