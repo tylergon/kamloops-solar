@@ -26,41 +26,46 @@ ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
 
 ##### DEM #####
 
-
-log_info("DEM: Generating")
-
-# Configure temporary storage
-dem_ctg <- ctg
-opt_output_files(dem_ctg) <- path(config$scratch_dir, "dem/dem_{XLEFT}_{YBOTTOM}")
-
-# Generate DEM
-dem <- rasterize_terrain(dem_ctg, config$spatial_resolution, tin())
-
-log_info("DEM: Writing")
-
 dem_path <- path(config$output_dir, "dem.tif")
-writeRaster(dem, dem_path, overwrite = TRUE)
 
-log_success("DEM: Complete")
+if (FALSE) {
+  log_info("DEM: Generating")
 
-rm(dem_ctg, dem_path); gc()
+  # Configure temporary storage
+  dem_ctg <- ctg
+  opt_output_files(dem_ctg) <- path(config$scratch_dir, "dem/dem_{XLEFT}_{YBOTTOM}")
+
+  # Generate DEM
+  dem <- rasterize_terrain(dem_ctg, config$spatial_resolution, tin())
 
 
-# ##### Normalized Catalogue #####
+  log_info("DEM: Writing")
+
+  writeRaster(dem, dem_path, overwrite = TRUE)
+
+  log_success("DEM: Complete")
+
+  rm(dem_ctg, dem_path); gc()
+} else {
+  log_info("DEM: Loading")
+  dem <- rast(dem_path)
+  log_info("DEM: Loaded")
+}
 
 
-log_info("nLAS: Generating")
+##### Normalized Catalogue #####
 
-# Set up the output for the normalized point clouds
-opt_output_files(ctg) <- path(config$scratch_dir, "normalized/norm_{ID}")
+if (FALSE) {
+  log_info("nLAS: Generating")
 
-# Normalize the point cloud
-norm_ctg <- normalize_height(ctg, dem)
+  # Set up the output for the normalized point clouds
+  opt_output_files(ctg) <- path(config$scratch_dir, "normalized/norm_{ID}")
 
-log_success("nLAS: Complete")
+  # Normalize the point cloud
+  norm_ctg <- normalize_height(ctg, tin())
 
-rm(dem); gc()
-
+  log_success("nLAS: Complete")
+}
 
 ##### CHM #####
 
@@ -68,11 +73,21 @@ rm(dem); gc()
 log_info("CHM: Generating")
 
 # Configure temporary storage
-chm_ctg <- norm_ctg
+chm_ctg <- readLAScatalog(
+  path(config$scratch_dir, "normalized"),
+  pattern = "*.las"
+)
+
+st_crs(chm_ctg) <- config$crs
+opt_chunk_size(chm_ctg) <- config$chunk_size
+opt_chunk_buffer(chm_ctg) <- config$chunk_buffer
+chm_ctg@output_options$drivers$SpatRaster$param$overwrite <- TRUE
+
 opt_output_files(chm_ctg) <- path(config$scratch_dir, "chm/chm_{XLEFT}_{YBOTTOM}")
 
 # Filter down to vegetation classes (above 1m)
 opt_filter(chm_ctg) <- "-keep_class 3 5 -drop_z_below 1"
+opt_restart(chm_ctg) <- 6485
 
 # Generate CHM
 chm <- rasterize_canopy(

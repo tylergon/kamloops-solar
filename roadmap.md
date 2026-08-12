@@ -36,7 +36,4 @@
 - [ ] Can loaded libraries be shared b/w orchestrate.r & children?
 - [ ] Extract generalizable logic into utils.r -> source("src/utils.r")
 - [ ] Could smoothing help?
-
-## Discussion Topics for Greg
-
-- Parallelizing DBSCAN. How do we feel about the current method.
+- [ ] Clip out rivers from resulting DEM -- Prettier
