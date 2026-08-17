@@ -24,25 +24,31 @@ rscript("src/scripts/1-topography.r")
 # # Building Identification
 rscript("src/scripts/2-buildings.r")
 
+
 # Orchestrate solar radiation modelling
 
-# Read in LiDAR
-ctg <- readLAScatalog(
-  config$input_dir,
-  recursive = TRUE,
-  pattern = "*.copc.laz"
-)
-
-# Update catalog config
-st_crs(ctg) <- config$crs
-opt_chunk_size(ctg) <- config$chunk_size
-opt_chunk_buffer(ctg) <- config$chunk_buffer
-opt_laz_compression(ctg) <- TRUE
-
-# Retile LiDAR for solar modelling
 retile_dir <- path(config$scratch_dir, "SEBE")
-opt_output_files(ctg) <- path(retile_dir, "{XLEFT}_{YBOTTOM}", "tile")
-catalog_retile(ctg)
+
+# Retiling LiDAR to align solar modelling tiling w/ lidR outputs
+if (FALSE) {
+  # Read in LiDAR
+  ctg <- readLAScatalog(
+    config$input_dir,
+    recursive = TRUE,
+    pattern = "*.copc.laz"
+  )
+
+  # Update catalog config
+  st_crs(ctg) <- config$crs
+  opt_chunk_size(ctg) <- config$chunk_size
+  opt_chunk_buffer(ctg) <- config$chunk_buffer
+  opt_laz_compression(ctg) <- TRUE
+
+  # Perform retile
+  opt_output_files(ctg) <- path(retile_dir, "{XLEFT}_{YBOTTOM}", "tile")
+  catalog_retile(ctg)
+}
+
 
 # Spin up parallelization
 plan(multisession, workers = config$workers)
