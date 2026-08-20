@@ -9,7 +9,6 @@ library(dplyr)
 library(lwgeom)
 library(units)
 
-
 source("src/utils.r")
 init_logging("5-segmentation")
 
@@ -25,8 +24,8 @@ segments_rast_path <- path(config$output_dir, "segments.tif")
 bldg_rast <- rast(buildings_path)
 bldg_rast[!bldg_rast] <- NA
 bldg_poly <- as.polygons(bldg_rast) |>
-    st_as_sf() |>
-    st_cast("POLYGON")
+  st_as_sf() |>
+  st_cast("POLYGON")
 
 # Divide buildings into groups
 n_bldg <- nrow(bldg_poly)
@@ -40,62 +39,61 @@ bldg_poly_wrapped <- bldg_poly |> vect() |> wrap()
 
 # Individually cluster each buildings pixels to identify segments
 result <- future_map(chunks, \(chunk) {
-    # Load in the normals raster
-    n_local <- rast(normals_path)
-    bldg_poly_local <- unwrap(bldg_poly_wrapped)
+  # Load in the normals raster
+  n_local <- rast(normals_path)
+  bldg_poly_local <- unwrap(bldg_poly_wrapped)
 
-    # Sequentially segment buildings in this group
-    map(chunk, \(i) {
-        # Crop out the buildings features
-        bldg_i <- crop(n_local, bldg_poly_local[i,], mask = TRUE)
+  # Sequentially segment buildings in this group
+  map(chunk, \(i) {
+    # Crop out the buildings features
+    bldg_i <- crop(n_local, bldg_poly_local[i,], mask = TRUE)
 
-        # Generate a data frame encoding our variables for DBSCAN
-        features <- as.data.frame(bldg_i, xy = TRUE) |> na.omit()
+    # Generate a data frame encoding our variables for DBSCAN
+    features <- as.data.frame(bldg_i, xy = TRUE) |> na.omit()
 
-        # Handle edge cases
-        # 1. No features are in the area
-        # 2. Single column / row
-        if (nrow(features) == 0 || length(unique(features$x)) < 2 || length(unique(features$y)) < 2) {
-            return(NULL)
-        }
+    # Handle edge cases
+    # 1. No features are in the area
+    # 2. Single column / row
+    if (nrow(features) == 0 || length(unique(features$x)) < 2 ||
+          length(unique(features$y)) < 2)
+      return(NULL)
 
-        # Perform clustering
-        db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.04, minPts = 6)
-        features$cluster <- db$cluster
+    # Perform clustering
+    db <- dbscan(features[, c("nx", "ny", "nz")], eps = 0.04, minPts = 6)
+    features$cluster <- db$cluster
 
-        # Build raster, wrap, and return
-        r <- rast(features[, c("x", "y", "cluster")], crs = crs(bldg_i), extent = ext(bldg_i))
-        wrap(r)
-    })
+    # Build raster, wrap, and return
+    wrap(rast(features[, c("x", "y", "cluster")],
+              crs = crs(bldg_i),
+              extent = ext(bldg_i)))
+  })
 })
 
 plan(sequential)
 
 # Massage results into a single raster
 segments_rast <- result |>
-    list_flatten() |>
-    keep(\(x) is(x, "PackedSpatRaster")) |>
-    map(\(x) unwrap(x)) |>
-    sprc() |>
-    mosaic()
+  list_flatten() |>
+  keep(\(x) is(x, "PackedSpatRaster")) |>
+  map(\(x) unwrap(x)) |>
+  sprc() |>
+  mosaic()
 segments_rast[segments_rast == 0] <- NA
 writeRaster(segments_rast, segments_rast_path, overwrite = TRUE)
 
 # Calculate metrics for filtering segments
 segment_metrics <- as.polygons(segments_rast) |>
-    st_as_sf() |>
-    st_cast("POLYGON") |>
-    mutate(
-        area_m2 = st_area(geometry),
-        perimeter_m = st_perimeter(geometry),
-        para = drop_units(perimeter_m / area_m2)
-    )
+  st_as_sf() |>
+  st_cast("POLYGON") |>
+  mutate( # Generate geometric fields
+    area_m2 = st_area(geometry),
+    perimeter_m = st_perimeter(geometry),
+    para = drop_units(perimeter_m / area_m2)
+  ) |>
+  filter( # Filter out unusable segments
+    area_m2 >= set_units(2, "m^2"),
+    para <= 3
+  )
 
-st_write(segment_metrics, path(config$scratch_dir, "segment_metrics.gpkg"), delete_dsn=T)
-
-segment_metrics |>
-    filter(
-        # area_m2 >= set_units(2, "m^2"),
-        para <= 3
-    ) |>
-    st_write(segments_poly_path, delete_dsn = TRUE)
+# Write out results
+st_write(segment_metrics, segments_poly_path, delete_dsn = TRUE)
