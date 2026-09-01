@@ -17,5 +17,4 @@ init_logging <- function (module, subdir = NA) {
     log_layout(layout_glue_generator(
         format = paste0("{level} [{format(time, \"%Y-%m-%d %H:%M:%S\")}] [", module, "] {msg}")
     ))
-    log_info("Initialized")
 }

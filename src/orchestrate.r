@@ -19,10 +19,10 @@ init_logging("orchestrate.r")
 # log_info(sessionInfo())
 
 # # Generate topographic datasets
-rscript("src/scripts/1-topography.r")
+# rscript("src/scripts/1-topography.r")
 
 # # Building Identification
-rscript("src/scripts/2-buildings.r")
+# rscript("src/scripts/2-buildings.r")
 
 
 # Orchestrate solar radiation modelling
@@ -57,23 +57,31 @@ log_info("Beginning solar radiation modelling")
 # Loop through tiles
 tiles <- list.files(retile_dir, full.name = TRUE)
 results <- future_map(tiles, \(tile) {
-  init_logging(basename(tile), "3-solar_modelling")
-
-  # Attempt to perform solar modelling
   is_success <- FALSE
-  tryCatch(
-    {
-      log_info("ORCHESTRATION - Initializing")
-      rscript("src/scripts/3-solar_modelling.r", cmdargs = c(tile), fail_on_status = TRUE)
-      log_success("ORCHESTRATION - Complete")
-      is_success <- TRUE
-    },
-    error = \(e) {
-      log_error(skip_formatter(paste0("Condition: ", conditionMessage(e))))
-      log_error(skip_formatter(paste0("stdout: ", e$stdout)))
-      log_error(skip_formatter(paste0("stderr: ", e$stderr)))
-    }
-  )
+
+  init_logging("orchestrate.r")
+  
+  # Check if a previous run has succeeded
+  tile_output <- path(tile, "Energyyearroof.tif")
+  output_exists <- file.exists(tile_output) && file.info(tile_output)$size > 10000
+
+  # If no previous result exists, perform solar modelling
+  if (output_exists) {
+    log_info(paste0(basename(tile), " - Skipped"))
+    is_success <- TRUE
+  } else {
+    tryCatch(
+      {
+        log_info(paste0(basename(tile), " - Initializing"))
+        rscript("src/scripts/3-solar_modelling.r", cmdargs = c(tile), fail_on_status = TRUE)
+        log_success(paste0(basename(tile), " - Complete"))
+        is_success <- TRUE
+      },
+      error = \(e) {
+        log_error(paste0(basename(tile), " - Failed"))
+      }
+    )  
+  }
 
   tibble(tile = basename(tile), is_success)
 }) |> list_rbind()

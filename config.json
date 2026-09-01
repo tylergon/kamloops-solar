@@ -12,5 +12,5 @@
     "SEBE": {
         "albedo": 0.15
     },
-    "workers": 24
+    "workers": 32
 }
