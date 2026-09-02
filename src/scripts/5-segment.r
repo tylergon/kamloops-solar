@@ -91,7 +91,6 @@ segment_metrics <- as.polygons(segments_rast) |>
     para = drop_units(perimeter_m / area_m2)
   ) |>
   filter( # Filter out unusable segments
-    area_m2 >= set_units(2, "m^2"),
     para <= 3
   )
 

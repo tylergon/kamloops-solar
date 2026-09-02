@@ -30,7 +30,7 @@ tryCatch({
   
   # Check that the tile is mostly populated
   total_pixels <- ncell(dsm)
-  na_pixels <- global(r, fun = \(x) sum(is.na(x)))
+  na_pixels <- global(dsm, fun = \(x) sum(is.na(x)))
   if ((na_pixels / total_pixels) >= 0.95) {
     stop("Unpopulated pixel")
   }
@@ -130,6 +130,10 @@ tryCatch({
   log_success("SEBE output cropped")
 }, error = \(e) {
   log_error("SEBE failed")
-  log_error(skip_formatter(e))
-  stop()
+  if (is.character(e$message)) {
+    log_error(skip_formatter(e$message))
+  } else {
+    log_error(e$message)
+  }
+  stop("Tile failed, see log file for detailed error")
 })
