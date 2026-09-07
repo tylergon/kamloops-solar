@@ -1,0 +1,16 @@
+{
+    "crs": 26910,
+    "chunk_size": 250,
+    "chunk_buffer": 50,
+    "spatial_resolution": 0.5,
+    "channel_buffer": 0.5,
+    "project_dir": "/home/tygon804/kamloops-solar",
+    "input_dir": "/home/tygon804/SharedData/kamloops-solar/Input",
+    "output_dir": "/home/tygon804/SharedData/kamloops-solar/Output",
+    "scratch_dir": "/home/tygon804/SharedData/kamloops-solar/Scratch",
+    "log_dir": "/home/tygon804/kamloops-solar/logs",
+    "SEBE": {
+        "albedo": 0.15
+    },
+    "workers": 32
+}

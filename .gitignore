@@ -12,6 +12,7 @@ output/
 .Rproj.user
 .Rhistory
 .RDataTmp*
+Rplots.pdf
 
 # History files
 .Rhistory
@@ -64,3 +65,14 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Log files
+SuPy.log
+run.log
+
+# LAS stuff
+.las
+
+/log
+*.log
+terrain.tif
